@@ -1,11 +1,9 @@
 import numpy as np
 import random
 import os.path
-import time
 import argparse
 
-from . import datasets, estimate, Hash, jac
-
+from .aminhash import datasets, estimate, Hash, jac
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--data', type=str, default='netflix', choices=datasets.files.keys())
@@ -68,7 +66,7 @@ for i, (q, answer) in enumerate(zip(qs, answers)):
     print(f'{i}/{len(qs)} r~{total / i if i > 0 else 0}', end='\r', flush=True)
     if i % 400 == 0:
         print()
-    estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, estimates)
+    estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
     candidates = np.argpartition(-estimates, R2)[:R2]
     r = len(set(candidates) & set(answer)) / R1
     total += r

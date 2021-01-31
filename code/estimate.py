@@ -3,7 +3,7 @@ import random
 import argparse
 import matplotlib.pyplot as plt
 
-from . import datasets, Hash, estimate, jac
+from .aminhash import datasets, Hash, estimate, jac
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--data', type=str, default='netflix', choices=datasets.files.keys())
@@ -31,7 +31,7 @@ for method in ['sym', ('fast', 0, 10), ('fast', 1, 10), 'mle']:
     for x, y in xys:
         db = np.array([[h(y) for h in hs]], dtype=np.int32)
         sizes = np.array([len(y)], dtype=np.int32)
-        estimates, _, _ = estimate(method, x, db, sizes, dom)
+        estimates, _, _ = estimate(method, x, db, sizes, dom, hs)
         estis.append(estimates[0])
         reals.append(jac(x, y))
     ax.scatter(reals, estis, label=method)

@@ -2,7 +2,7 @@ import numpy as np
 import random
 import time
 
-import minhash
+import .minhash
 
 random.seed(74)
 
@@ -33,7 +33,7 @@ def make_tables(x, hs, dom):
     return ktbs, mtbs, ctab
 
 
-def estimate(method, x, ys, ysz, dom, estimates=None):
+def estimate(method, x, ys, ysz, dom, hs, estimates=None):
     if method == 'sym':
         start = time.time()
         hashes = [h(q) for h in hs]
