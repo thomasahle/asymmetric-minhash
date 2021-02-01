@@ -1,11 +1,8 @@
 import numpy as np
-import random
 import os.path
 import argparse
-import multiprocessing
-from functools import partial
 
-from aminhash import datasets, estimate, Hash, jac
+from aminhash import datasets, estimate, Hash, jac, tasks
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--data', type=str, default='netflix', choices=datasets.files.keys())
@@ -30,39 +27,24 @@ data, qs = data[:N-M], data[N-M:N]
 
 print(f'Brute forcing')
 cache_file = f'tresholds_{args.data}_{N}_{M}_{R}.npy'
-if os.path.exists(cache_file):
-    answers = np.load(cache_file)
-else:
-    answers = []
-    pool = multiprocessing.Pool(20)
-    for i, q in enumerate(qs):
-        print(f'{i}/{len(qs)}', end='\r', flush=True)
-        x = set(q)
-        #def f(x, y): return jac(x, y)
-        js = pool.map(partial(jac, set(q)), data)
-        js = np.array(js)
-        #js = np.array([jac(x, y) for y in data])
-        # We store the smallest acceptable similarity, rather than
-        # the acutal indicies, since duplicate similarities would
-        # otherwise lead to wrong reported results.
-        tr = -np.partition(-js, R)[R-1]
-        answers.append(tr)
-    answers = np.array(answers)
-    np.save(cache_file, answers)
+def inner_brute(x, db):
+    js = np.array([jac(x, y) for y in db])
+    # We store the smallest acceptable similarity, rather than
+    # the acutal indicies, since duplicate similarities would
+    # otherwise lead to wrong reported results.
+    return -np.partition(-js, R)[R - 1]
+answers = tasks.run(inner_brute, qs, args=(data,), cache_file=cache_file, verbose=True)
 
 print('Making hash functions')
 hs = [Hash(dom) for _ in range(K)]
 
 print('Hashing')
-hash_file = f'hashes_{N}_{M}_{K}.npy'
-if os.path.exists(hash_file):
-    size_db = np.load(hash_file)
-    db = np.ascontiguousarray(size_db[:, 1:]).astype(np.int32)
-    sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
-else:
-    db = np.array([[h(y) for h in hs] for y in data], dtype=np.int32)
-    sizes = np.array([len(y) for y in data], dtype=np.int32)
-    np.save(hash_file, np.hstack((sizes[:, np.newaxis], db)))
+hash_file = f'hashes_{args.data}_{N}_{M}_{K}.npy'
+def inner_hashing(hs, y):
+    return [len(y)] + [h(y) for h in hs]
+size_db = tasks.run(inner_hashing, data, args=(hs,), cache_file=hash_file, verbose=True)
+db = np.ascontiguousarray(size_db[:, 1:]).astype(np.int32)
+sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
 
 print('Sample hash:')
 print(db[0])
