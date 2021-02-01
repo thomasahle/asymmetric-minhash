@@ -2,7 +2,7 @@ import numpy as np
 import random
 import time
 
-import .minhash
+from . import minhash
 
 random.seed(74)
 
@@ -18,7 +18,7 @@ class Hash:
 
 
 def jac(x, y):
-    v = len(set(x) & set(y))
+    v = len(x.intersection(y))
     return v / (len(x) + len(y) - v)
 
 
@@ -34,9 +34,11 @@ def make_tables(x, hs, dom):
 
 
 def estimate(method, x, ys, ysz, dom, hs, estimates=None):
+    N = len(ys)
+
     if method == 'sym':
         start = time.time()
-        hashes = [h(q) for h in hs]
+        hashes = [h(x) for h in hs]
         t1 = time.time() - start
 
         start = time.time()

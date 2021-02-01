@@ -57,7 +57,7 @@ cdef double ent2(int a, int b) nogil:
     return res
 
 cdef:
-    int i, max_table = 10**5
+    int i, max_table = 10**6 # Flickr has N=810,660
     double[::1] ftable = np.zeros(max_table)
 for i in range(1, max_table):
     ftable[i] = log(i) + ftable[i-1]
