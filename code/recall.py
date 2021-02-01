@@ -27,8 +27,9 @@ data, qs = data[:N-M], data[N-M:N]
 
 print(f'Brute forcing')
 cache_file = f'tresholds_{args.data}_{N}_{M}_{R}.npy'
-def inner_brute(x, db):
-    js = np.array([jac(x, y) for y in db])
+def inner_brute(ys, q):
+    x = set(q)
+    js = np.array([jac(x, y) for y in ys])
     # We store the smallest acceptable similarity, rather than
     # the acutal indicies, since duplicate similarities would
     # otherwise lead to wrong reported results.
@@ -42,7 +43,8 @@ print('Hashing')
 hash_file = f'hashes_{args.data}_{N}_{M}_{K}.npy'
 def inner_hashing(hs, y):
     return [len(y)] + [h(y) for h in hs]
-size_db = tasks.run(inner_hashing, data, args=(hs,), cache_file=hash_file, verbose=True)
+size_db = tasks.run(inner_hashing, data, args=(hs,), cache_file=hash_file,
+                    verbose=True, chunksize=1000)
 db = np.ascontiguousarray(size_db[:, 1:]).astype(np.int32)
 sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
 
@@ -60,7 +62,9 @@ for i, (q, threshold) in enumerate(zip(qs, answers)):
         print()
     estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
     guess = np.argmax(estimates)
-    realj = jac(set(q), db[guess])
+    realj = jac(set(q), data[guess])
     total += int(realj > threshold or np.isclose(realj, threshold))
-print(f'{R1}@{R2}: {total / len(qs)}')
+    #print(f'est: {estimates[guess]}, {realj=}, {threshold=}')
+print(f'recall@{R}: {total / len(qs)}')
 print(f'Time preparing: {t1=}, Time searching: {t2=}')
+
