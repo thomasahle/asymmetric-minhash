@@ -31,11 +31,15 @@ print(f'Brute forcing')
 cache_file = f'thresholds_{args.data}_{N}_{M}_{R}.npy'
 def inner_brute(ys, q):
     x = set(q)
+    # One can potentially do jaccard search faster by using that
+    # j/(1+j) = v/(x+y) is a monotonely increasing function in j.
+    # So taking the largest jaccard is the same as taking the
+    # largest v normalized by x+y.
     js = np.array([jac(x, y) for y in ys])
     # We store the smallest acceptable similarity, rather than
     # the acutal indicies, since duplicate similarities would
     # otherwise lead to wrong reported results.
-    return -np.sort(np.partition(-js, R))[R - 1]
+    return -np.sort(np.partition(-js, R)[:R])[-1]
 # TODO: This will pickle and copy data to every process. Can we maybe use
 # shared memory instead?
 answers = tasks.run(inner_brute, qs, args=(data,), cache_file=cache_file,
@@ -55,8 +59,8 @@ sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
 
 print('Sample hash:')
 print(db[0])
-
-print(f'Computing recall with method {args.method}, {args.type}')
+  
+print(f'Computing recall@{R} with method {args.method}, {args.type}')
 
 estimates = np.zeros(N, dtype=np.float32)  # Space for storing results
 t1, t2 = 0, 0
