@@ -1,0 +1,53 @@
+%! TEX root = ../aminhash.tex
+
+\section{Background and Related work}
+
+Estimators for MinHash, other than the ``classic'' one referred to in this paper, have been derived for various purposes.
+Cohen~\cite{DBLP:reference/algo/Cohen16b} made improved estimators for graph algorithms,
+and Ertl~\cite{DBLP:journals/corr/Ertl17} derived better estimators for Flajolet's HyperLogLog~\cite{flajolet1985probabilistic} variation of MinHash.
+%
+The extremely successful Mash~\cite{ondov2016mash} software in Bioinformatics works by
+a Bayesian estimator of sketch similarity that takes into account the process of `mer'-tokenization that created the data.
+However for the simple task of estimating similarities in the many-one setting, there appears to have been no prior work.
+
+%deriving a new significance test to differentiate chance matches when searching a database, and derive a new distance metric, the Mash distance, which estimates the mutation rate between two sequences directly from their MinHash sketches
+%Mash returns the s smallest hashes output by h over all k-mers in the sequence (Fig. 1). Typically referred to as a ``bottom-k sketch''
+% comprising 400 32-bit hash
+
+%@incollection{DBLP:reference/algo/Cohen16b,
+%Cohen Survey from 2016: http://www.cohenwang.com/edith/Surveys/minhash.pdf
+%Cohen
+%All-Distances Sketches, Revisited:HIP Estimators for Massive Graphs Analysis
+%https://arxiv.org/pdf/1306.3284.pdf
+%<-- This paper is very nice. Lots of good statistical references.
+
+%Its application in the context of Jaccard estimation similarity
+%using hash has been studied by Thorup (STOC 2013).
+
+\subsection{Quantization and Search}
+
+Since Jegou et al. 2010~\cite{jegou2010product} quantization has been a critical part of fast search data structures.
+In particular the approach of Product Quantization, which sketches vectors in $\R^d$ in a fast, data-sensitive way.
+Recently Guo et al.~\cite{guo2020accelerating} broke all records~\cite{aumuller2017ann} for Maximum Inner Product Search (MIPS) and Cosine Similarity, based on a new Product Quantization technique sensitive to those measures.
+The secret to these amazing results is the use of Single instruction, multiple data (SIMD) instructions on modern CPUs, which can consume large batches of quantized data per instruction.
+
+In comparison the landscape for Set Similarity Search is less developed.
+Recent theoretical work~\cite{christiani2017set, DBLP:conf/focs/AhleK20} has discovered the optimal randomized space partitions to use and replaced MinHash after 20 years in the lime light.
+However the state of the art implementations~\cite{christiani2018scalable} still use MinHash sketching for faster similarity estimation among points in the space region.
+In contrast to the Euclidean case, they have thus far had to the classical symmetric estimator.
+
+
+% Relation to one-way communication complexity.
+
+\subsection{Alternative sketches}
+
+There are a number of other sketches for estimating set similarity that we do not study in this paper.
+In general any sketch that allows cardinality estimation and taking the union of two sketches can be used to estimate the set overlap and similarity.
+Most estimators for these sketches are of the symmetric type, so it would be interesting to study whether some of them have good asymmetric estimators as well.
+Of particular interest we mention HyperLogLog~\cite{flajolet2007hyperloglog}, HyperMinHash~\cite{yu2020hyperminhash}, MaxLogHash~\cite{wang2019memory}, SetSketch~\cite{DBLP:journals/corr/abs-2101-00314} and $b$-Bit MinHash~\cite{li2010b}.
+
+Even ``Classical'' MinHash as studied in this paper has variations, such as bottom-$k$ MinHash and $k$-partition MinHash. Cohen~\cite{DBLP:reference/algo/Cohen16b} gives a nice survey of those as well as many more variations and applications.
+
+%TKDE 2018 A Review for Weighted MinHash Algorithms
+%(How does my method relate to weighted minhash?)
+

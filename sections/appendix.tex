@@ -1,0 +1,91 @@
+%! TEX root = ../aminhash.tex
+
+\section{Appendix}
+
+\subsection{Nice summation}
+Let $n_x=|x|$ and $n_y=|y|$.
+For a warm-up we show
+\begin{align}
+   \sum_{0\le m < u}
+   \binom{n_x-k(m)-[m\in x]}{v-[m\in x]}
+   \binom{u-m-[m\not\in x]-(n_x-k(m))}{n_y-v-[m\not\in x]}
+   = \binom{n_x}{v}\binom{u-n_x}{n_y-v}
+   .
+\end{align}
+
+We will use the following standard binomial sum:
+\begin{align}
+   \sum_{a<k<b}\binom{k}{c} &= \binom{b}{c+1} - \binom{a+1}{c+1}
+   %\sum_{k=0}^u\binom{k}{c} &= \binom{b+1}{c+1} - \binom{a}{c+1}
+\end{align}
+
+Define a sequence $(a_i)_{i\in[0,n_x+1]}$ such that $a_0=-1$, $a_{i+1} = x_i$ for $i\in[n_x]$ and $a_{n_x+1}=u$,
+where we see $x$ as a vector in $[u]^{n_x}$.
+
+We consider the sum of terms for the chunk of $m$s between two consecutive $a$ values.
+\begin{align}
+   &
+   %\sum_{0\le k \le n_x}
+   \sum_{a_k < m < a_{k+1}}
+   \binom{n_x-k}{v}
+   \binom{u-m-1-(n_x-k)}{n_y-v-1}
+   %+
+   %\binom{n_x-k-1}{v-1}
+   %\binom{u-a_{k+1}-(n_x-k)}{n_y-v}
+   \\&=
+   \binom{n_x-k}{v}
+   \left[
+   \binom{u-a_k-1-(n_x-k)}{n_y-v}
+   -
+   \binom{u-a_{k+1}-(n_x-k)}{n_y-v}
+\right]
+   \label{eq:sum_dif}
+\end{align}
+Define $c_k = \binom{u-a_k-(n_x-k+1)}{n_y-v}$,
+We are the interested in the sum
+\begin{align}
+   \sum_{0\le k \le n_x}
+   \binom{n_x-k}{v}(c_k-c_{k+1})
+   +
+   \sum_{0\le k < n_x}
+   \binom{n_x-k-1}{v-1}c_{k+1}
+   \label{eq:sum_all}
+\end{align}
+We substitute $k\mapsto k+1$ in the first term of \eqref{eq:sum_dif} to get the sum
+\[
+   \binom{n_x}{v}c_0
+   +
+   \sum_{0 < k+1 \le n_x}
+   \binom{n_x-k}{v}
+   c_k
+   =
+   \binom{n_x}{v}c_0
+   +
+   \sum_{0 \le k < n_x}
+   \binom{n_x-k-1}{v}
+   c_{k+1}
+\]
+which we can combine with the second term of \eqref{eq:sum_all}
+using the fact that $\binom{n_x-k-1}{v} + \binom{n_x-k-1}{v-1} = \binom{n_x-k}{v}$
+to give
+\[
+   \sum_{0\le k < n_x}
+   \binom{n_x-k}{v}
+   c_{k+1}
+   .
+\]
+This allows cancellation with the second term of \eqref{eq:sum_dif},
+leaving us with
+\[
+   \binom{n_x}{v}c_0
+   -
+   \binom{n_x-n_x}{v}c_{n_x+1}
+   =
+   \binom{n_x}{v}\binom{u+1-(n_x+1)}{n_y-v}
+   -
+   \binom{0}{v}
+   \binom{0}{n_y-v}.
+\]
+Now $\binom{0}{v}=[v=0]$, so unless $n_y=0$ this second term is 0, leaving us with
+$\binom{n_x}{v}\binom{u-n_x}{n_y-v}$.
+

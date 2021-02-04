@@ -1,0 +1,30 @@
+%! TEX root = ../aminhash.tex
+
+%\title{Getting More from MinHash}
+%\title{Improved MinHash Estimation for Nearest Neighbor Search}
+%\title{Minner: Improved MinHash Estimation by Counting the Values less than the Minimum}
+\title{Minner: Improved Recovery of Set Similarity in MinHash Quantized Databases by Counting the Values less than the Minimum}
+
+\begin{abstract}
+   Quantization is the state of the art approach to efficiently storing and searching large high-dimensional datasets.
+   Broder'97~\cite{broder1997resemblance} introduced the idea of Minwise Hashing for quantizing large sets or binary strings into a small number of values, and provided a way to reconstruct the overlap or Jaccard Similarity between two sets thus sketched.
+
+   In this paper, we propose a new estimator for Minwise Hashing in the case where the database is quantized, but the query is not.
+   We take a principled approach based on maximum likelihood and derive a fast practical algorithm with strong theoretical guarantees.
+   We test the estimator on standard datasets and obtain smaller reconstruction error and higher recall for nearest neighbour search.
+
+   Our methods touch only on the query side, allowing application to databases already quantized by Minwise Hashing.
+
+   Where estimating similarity from two sketches corresponds to the third party model of communication complexity, our setting corresponds to standard one way complexity, for which we give a new upper bound on the necessary bits to obtain a given variance of estimation.
+
+   % We can also compute the global risk of the MLE estimator, which is $0.178847/K$, $28.5\%$ less than the Classical Estimator.
+
+
+%   We introduce a new way to estimate the similarity $J(X,Y)$ given $h(Y)$ and $X$, that is asymptotically optimal in information theoretical terms, and which in practice reduces the number of samples needed by 30\% for a given recall.
+%
+%
+%   We save a factor of $>1.42$ in variance over the standard method,
+%   which means a $16\%$ saving in the necessary number of MinHash samples for equivalent confidence bounds.
+%   In the case of asymmetric set sizes and large similarities the improvement is particularly good, and we show an experimental improvement in recall on standard binary datasets.
+\end{abstract}
+

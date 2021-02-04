@@ -1,0 +1,51 @@
+%! TEX root = ../aminhash.tex
+
+\section{Implementation Details}
+
+While the algorithm is simple conceptually, there are a few tricks to making it run as fast as the classical MinHash sketch.\footnote{We don't strive to be faster than the classical estimator for a fixed $K$, but for a given recall we can be faster, since our $K$ can be smaller.}
+
+\begin{algorithm}[H]
+   \caption{Given a query $X\subseteq [u]$ and a database $D\in [0,1]^{n\times K}$ of sketches of sets $Y_1,\dots\subseteq [u]$, the algorithm estimates the similarity with each $Y_i$.}
+   \label{alg:query}
+   \begin{algorithmic}[1]
+      \For{$j=1$ to $K$}
+         \State $H_j \gets \text{sorted}(\{h_j(x) : x \in X\})$
+      \EndFor
+      \State Initialize a max-heap.
+      \For{$i=1$ to $n$}
+         %\Comment{Number of contained values, minner values and sum of hashes.}
+         \State $C, M, V \gets 0, 0, 0$
+         \For{$i=1$ to $K$}
+         \State $V \gets V + D_{i,j}$
+            \State $C\gets C + [D_{i,j} \in H_j]$ \label{line:contains}
+            \State $M \gets M + \sum_{v\in H_j} [v < D_{i,j}]$ \label{line:prefix}
+         \EndFor
+         \State $y \gets |Y_i|$
+         \State $v \gets \min\{\frac{C|X|}{C+M},\frac{Cy}{K}\}$
+         \Comment{Minner Estimator}
+         \For{$i=1$ to Newtons}
+            \State $\nu \gets \frac{V/u + C/(v+1) - (K-C)/(y-v+1) - M/(|X|-v+1)}
+            {C/(v+1)^2 + (K-C)/(y-v+1)^2 + M/(|X|-v+1)^2}$
+            \State $v \gets \min\{\max\{0,v\}, |X|, y\}$
+         \EndFor
+         \State $j \gets v/(|X| + y - v)$ \Comment{If Jaccard similarity is required.}
+         \State Push $(j,i)$ to the max-heap if big enough.
+      \EndFor
+   \end{algorithmic}
+\end{algorithm}
+
+In \cref{alg:query} we show how one may use our estimator to do a fast scan through a database.
+We assume $D_{i,j}\in[0,1]$ stores the minimum hash value of $Y_i$ under hash function $h_j$.
+It is perhaps more typical to have $D_{i,j}$ store the $\argmin_{y\in Y_i}h(y)$, but in that case one can simply compute $h(D_{i,j})$ at runtime, which is usually a very cheap function.
+The MinHash survey of Cohen~\cite{DBLP:reference/algo/Cohen16b} discusses many very efficient ways of storing MinHash values.
+
+In \cref{alg:query} we start by hashing each element of $X$ under the $K$ hash functions.
+We sort the resulting values, to be able to perform \cref{line:contains} and \cref{line:prefix} more efficiently.
+These lines respectively check if a given $Y$ hash-value is also in $X$, and counts how many hash-values from $X$ are smaller than the $Y$ hash-value.
+
+There are many ways to perform these tasks.
+If the range of $h$ is small, say under a million, we can precompute tables.
+For large ranges, we can use that the $H_j$'s are sorted and binary search, which works for both tasks.
+In practice, if $|Y|$ is not too much bigger than $|X|$, a linear scan of $H_j$, will yield the right position in constant time.
+One can also use one of a plethora of fast prefix sum data structures, which are particularly simple since the values of $H_j$ are uniformly random.
+% TODO: Mention that thing about makeing |X| buckets and precomputing the prefix sums?
