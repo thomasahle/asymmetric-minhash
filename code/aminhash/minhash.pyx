@@ -69,37 +69,41 @@ cdef double ent3(int a, int b) nogil:
     if a == 0 or b == 0 or a == b: return 0
     return ftable[a] - ftable[a-b] - ftable[b]
 
+cpdef float mle(int[::1] data, int x, int y, int u,
+                int[:,::1] mtab, int[:,::1] ktab, bool[::1] ctab) nogil:
+    cdef:
+        int dim = data.shape[0]
+        int i, j, dat
+        int m, k
+        int v, best_v
+        double best_logp, logp
+    best_v = 0
+    best_logp = log(0)
+    # TODO: Make a tertiarray search instead of linear
+    for v in range(min(x,y)+1):
+        logp = 0
+        for j in range(dim):
+            dat = data[j]
+            m = mtab[j][dat]
+            k = ktab[j][dat]
+            if not ctab[dat]:
+                logp += ent3(x-k, v) + ent3(u-m-1-(x-k), y-v-1)
+            else:
+                logp += ent3(x-k-1, v-1) + ent3(u-m-(x-k), y-v)
+            logp -= ent3(x, v) + ent3(u-x, y-v)
+        if logp > best_logp:
+            best_v, best_logp = v, logp
+    return best_v/<double>(x+y-best_v)
+
 cpdef void query_mle(int[:,::1] data, int x, int u, int[::1] ysz,
         int[:,::1] mtab, int[:,::1] ktab, bool[::1] ctab, float[::1] out) nogil:
     cdef:
         int n = data.shape[0]
-        int dim = data.shape[1]
-        int i, j, dat
-        int m, k, y
-        int v, best_v
-        double best_logp, logp
+        int i, y
 
     for i in range(n):
         y = ysz[i]
-        best_v = 0
-        best_logp = log(0)
-        # TODO: Make a tertiarray search instead of linear
-        for v in range(min(x,y)+1):
-            logp = 0
-            for j in range(dim):
-                dat = data[i, j]
-                m = mtab[j][dat]
-                k = ktab[j][dat]
-                if not ctab[dat]:
-                    logp += ent3(x-k, v) + ent3(u-m-1-(x-k), y-v-1)
-                else:
-                    logp += ent3(x-k-1, v-1) + ent3(u-m-(x-k), y-v)
-                logp -= ent3(x, v) + ent3(u-x, y-v)
-            #print(v, x, y, logp)
-            if logp > best_logp:
-                best_v, best_logp = v, logp
-        #print(best_v, best_logp)
-        out[i] = best_v/<double>(x+y-best_v)
+        out[i] = mle(data[i], x, ysz[i], u, mtab, ktab, ctab)
 
 cpdef void query2(int[:,::1] data, int x, int u, int[::1] ysz, int newtons, int type,
         int[:,::1] mtab, int[:,::1] ktab, bool[::1] ctab, float[::1] out) nogil:
@@ -107,15 +111,16 @@ cpdef void query2(int[:,::1] data, int x, int u, int[::1] ysz, int newtons, int 
         int n = data.shape[0]
         int dim = data.shape[1]
         int i, j, dat
-        float m, k, a, b, y, h
+        float m, k, a, b, y, h, im
         float jac, v, nwtn
 
     for i in range(n):
         y = ysz[i]
-        m, k, b, ham = 0, 0, 0, 0
+        m, k, b, ham, im = 0, 0, 0, 0, 0
         for j in range(dim):
             dat = data[i, j]
             m += mtab[j][dat]
+            im += u/<double>(1+mtab[j][dat])
             k += ktab[j][dat]
             b += ctab[dat]
         a = dim - b
@@ -135,6 +140,8 @@ cpdef void query2(int[:,::1] data, int x, int u, int[::1] ysz, int newtons, int 
         elif type == 11: v = min(b*x/(b+k), b*y/(a+b), x-k/h) # 0.1835
         elif type == 12: v = x-(y+1)*k/dim # 0.0243
         elif type == 13: v = min(x-(y+1)*k/dim, b*y/dim) # 0.1638
+        elif type == 14: v = b * min(x/(b+k), u/m) 
+        elif type == 15: v = b * min(x/(b+k), im/<double>dim/<double>dim) 
         v = max(min(v, x, y), 0)
         for j in range(newtons):
             nwtn = m/u + b/(v+1) - a/(y-v+1) - k/(x-v+1)

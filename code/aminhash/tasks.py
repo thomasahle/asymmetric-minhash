@@ -6,10 +6,13 @@ import functools
 
 def run(f, tasks, args=(), cache_file=None, verbose=False, processes=10, chunksize=100,
             report_interval=1, perc=False):
-    if cache_file and os.path.exists(cache_file):
-        if verbose:
-            print(f'Using cached file {cache_file}')
-        return np.load(cache_file)
+    if cache_file:
+        if os.path.exists(cache_file):
+            if verbose:
+                print(f'Using cached file {cache_file}')
+            return np.load(cache_file)
+        elif verbose:
+            print(f'Did not find {cache_file}')
 
     res = []
     if verbose:

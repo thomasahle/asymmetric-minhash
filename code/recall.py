@@ -1,6 +1,7 @@
 import numpy as np
 import os.path
 import argparse
+import random
 
 from aminhash import datasets, estimate, Hash, jac, tasks
 
@@ -15,6 +16,10 @@ parser.add_argument('--type', type=int, default=10, help='Extra parameter for co
 args = parser.parse_args()
 
 M, K = args.M, args.K
+# We only do 1-recall@R. That is, we compare the top R returned by
+# the estimator with the single true nearest neighbour. This makes
+# sense in the setting where we use the sketch distance as a "first pass"
+# through the data.
 R = 10
 
 if args.method == 'fast':
@@ -28,7 +33,7 @@ N -= M
 print(f'{N=}, {dom=}')
 
 print(f'Brute forcing')
-cache_file = f'thresholds_{args.data}_{N}_{M}_{R}.npy'
+cache_file = f'thresholds_{args.data}_{N}.npy'
 def inner_brute(ys, q):
     x = set(q)
     # One can potentially do jaccard search faster by using that
@@ -39,13 +44,16 @@ def inner_brute(ys, q):
     # We store the smallest acceptable similarity, rather than
     # the acutal indicies, since duplicate similarities would
     # otherwise lead to wrong reported results.
-    return -np.sort(np.partition(-js, R)[:R])[-1]
+    #return -np.sort(np.partition(-js, R)[:R])[-1]
+    # I'm an idiot that doesn't understand recall
+    return np.max(js)
 # TODO: This will pickle and copy data to every process. Can we maybe use
 # shared memory instead?
 answers = tasks.run(inner_brute, qs, args=(data,), cache_file=cache_file,
                     verbose=True, processes=40, report_interval=1)
 
 print('Making hash functions')
+random.seed(74)
 hs = [Hash(dom) for _ in range(K)]
 
 print('Hashing')
@@ -70,9 +78,9 @@ for i, (q, threshold) in enumerate(zip(qs, answers)):
     if i % 400 == 0:
         print()
     estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
-    guess = np.argmax(estimates)
-    realj = jac(set(q), data[guess])
-    total += int(realj > threshold or np.isclose(realj, threshold))
+    guesses = np.argpartition(-estimates, R)[:R]
+    realj = max(jac(set(q), data[g]) for g in guesses) # brute force the guesses
+    total += int(realj >= threshold or np.isclose(realj, threshold))
     #print(f'est: {estimates[guess]}, {realj=}, {threshold=}')
 print(f'recall@{R}: {total / len(qs)}')
 print(f'Time preparing: {t1=}, Time searching: {t2=}')
