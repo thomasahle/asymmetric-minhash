@@ -9,7 +9,7 @@ MinHash sketches (Min-wise sketches) are randomized summaries of sets (or equiva
 The idea is to pick $K$ random functions $h_i : U \to [0,1]$ and define the sketch of $X\subseteq U$ to be
 $q(x) = (\argmin_{x\in X}h_1(x), \dots, \argmin_{x\in X}h_K(x))$.
 % TODO: references
-After early uses in statistics~\cite{brewer1972selecting} and correlation estimation~\cite{flajolet1985probabilistic}, the term was coined by Broder~\cite{broder1997resemblance} in the context of detecting near-duplicate web pages.
+After early uses in statistics~\cite{brewer1972selecting} and correlation estimation~\cite{flajolet1985probabilistic}, the term was coined by Broder~\cite{broder1997resemblance, broder1997syntactic} in the context of detecting near-duplicate web pages.
 
 MinHash is particularly popular for searching genomes and metagenomes in Bioinformatics~\cite{ondov2016mash} and other large sparse categorical data.
 A typical scenario is that we want to store some sets $Y_1, \dots$, so we compute the MinHash sketch for each of them, with perhaps $K=100$.
@@ -43,15 +43,18 @@ see~\cref{fig:jegou} for a visualization.
 
 While this is a natural idea in Euclidean space, it is less clear how it may apply in the context of set search and MinHash.
 Somehow we have to compute a similarity value, given $X$ and $q(Y)$ better than $\|q(X)-q(Y)\|_1/K$, since presumably we're throwing information away about $X$ by sketching it.
-We can see how this may be possible by considering the case where the MinHash value of $Y$ is not equal to the MinHash value of $X$, but is perhaps equal to the second or third smallest value.
-That ought to count as nearly as good as the values being equal, even if the classical MinHash sketch would count it as 0.
+We can see how this may be possible by considering the case where the MinHash rank of $Y$ is not equal to the MinHash rank of $X$, but is perhaps equal to the second or third smallest rank.
+That ought to count as nearly as good as the ranks being equal, even if the classical MinHash sketch would count it as 0.
+
+% TODO: Can we make sure this is on the first page?
+\subsection{Results}
 
 In this paper we take a principled approach to this problem.
 \begin{enumerate}
    \item We derive and analyse the Maximum Likelihood Estimator for MinHash.
-      We show that the variance is about half of the variance of the classical sketch-space estimator.
-   \item We study various relaxations, trading precision for speed of estimation.
-      A particular good choice is dubbed the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a value \emph{smaller than the minimum} hash of $Y$.
+      We show that the variance is about half of the variance of the classical sketch-space estimator. (See figures \ref{fig:var} and \ref{fig:mle_variance}.)
+   \item We study various relaxations, trading precision for speed of estimation. (See tables \ref{tab:netflix} and \ref{tab:flickr}.)
+      A particular good choice is dubbed the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a rank \emph{smaller than the minimum} hash of $Y$.
 \end{enumerate}
 
 While our contribution is mainly in applications that can be characterized as one-many, such as search, many applications characterized as many-many are trivially reduced to $n$ times one-many.
@@ -69,4 +72,11 @@ In the survey these datasets were identified as archetypical examples with and w
 In practice this means that the Netflix dataset requires a much larger $K$, for reasonable recall, than the Flickr dataset, but we still get substantial improvements in recall on both.
 The Netflix dataset is originally from \href{https://www.cs.uic.edu/~liub/Netflix-KDD-Cup-2007.html}{KDD-Cup 2007}.
 
+\subsection{Variance and the Model}
+
+TODO: Rasmus: ``Synes at introen er god. Kunne måske være mere eksplicit om hvad det er du måler. Er plads fx i antal bits eller antal elementer? Hvorfor netop varians?''
+
+Hvordan måler vi tingene?
+
+The Maximum Likelihood Estimator is quite complicated, and we have to work quite indirectly in order to analyze it.
 

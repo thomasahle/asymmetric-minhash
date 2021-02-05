@@ -2,110 +2,180 @@
 
 \section{The Estimators}
 
-We start by considering estimation when given just one MinHash value.
-We model the situation as follows:
+TODO: Remove this.
+Notation:
+\begin{itemize}
+   \item $M$ is the number of Minner values.
+   \item $R$ is the hash value (rank).
+   \item $C$ is number of contained values.
+\end{itemize}
 
-The query set $X$ and the dataset $Y$ are subsets of some universe $U=\{0,1,\dots,u-1\}$.
-The hash function $h:U\to[0,1]$ can be seen as a random permutation of $U$.
-Once we see the MinHash value $m=\argmin_{y\in Y}h(y)$ we can in principle decide its relative position in $U$ under the total order given by $h$, since there is a 0 chance that $h$ maps two elements to the same value.
-% This sentence is a bit clumsy
-In practice permutations are often used instead of hash functions in the first place~\cite{broder2000min}.
+\hspace{1em}
 
-At query time we know the hash function $h$, so we can assume $h(x)$ is known for all $x\in X$.
-We can then assume $Y$ is sampled without replacement from $U\setminus X$ in a way compatible with the MinHash $m$.
+In this section we develop a Maximum Likelihood Estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
+Such an estimator has the lower possible variance asymptotically as $K\to\infty$, but it is slow to evaluate, which destroys the gains from needing fewer MinHash values.
+We thus proceed to develop a third estimator that is as fast as the classical estimator.
+We call it the Minner estimator and we show experimentally that it requires nearly as few MinHash values as the MLE for equivalent recall.
+In fact, for $K < 50$ it requires fewer values than even the MLE.
 
-% Integrate this better
-In our context of Nearest Neighbor Search it is natural to assume we know the size of $Y$, since it takes just one extra word of storage next to the MinHash values.
+\subsection{Maximum Likelihood Estimator}
 
-\subsection{Maximum Likelihood}
+Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model on the basis of the observation.
+A Maximum Likelihood Estimator chooses the parameters that maximizes the probability that the model generates the particular observed value.
+That is, if the observation is equal to $\rho$ with probability $p(\rho;\,\theta)$, $\theta$ is unknown, once we observe $\rho$, we estimate $\theta$ as the $\argmax p(\rho;\,\theta)$.
 
-Case 1: Let's say $m\in x$.
-Let $k$ be the number of elements of $x$ to the left of $m$.
-Ways to choose all other elements of $x\cap y$ starting from $m$: $x-k-1\choose v$
-Ways to choose disjoint elements: $u-m-(x-k)\choose y-v$.
-Total ways to choose $y$: $\binom{u-x}{y-v}\binom{x}{v}$.
+% A statistical model for a MLE contains four types of variables:
+% Those we know at the time of estimation;
+% those that are random but we observe;
+% those that are random and hidden;
+% and those we want to estimate.
 
-
-While we want to find the MLE for Jaccard Similarity, we can note that there is a monotone relationship between the Jaccard similarity and the overlap, so it suffices to find an MLE for overlap.
-
-We want to estimate the log-likelihood:
+In our case we get the following model:
+Given a set $X$, a hash function $h:U\to [0,1]$, and values $n_y$ and $v$, we sample a set $Y\subseteq U$ with $|Y|=n_y$ and $v=|X\cap Y|$.
+We let $r$ be the smallest value $h(y)$ for $y\in Y$.
+The log-likelihood of the observation is then:
 \[
-   \ell(m; v) = \log\Pr[\text{observing $m$ given $|X\cap Y|=v$}]
+   \ell(r; v) = \log\Pr_{Y}[\min_{y\in Y}h(y) = r].
 \]
+We note a couple of things about the model:
+1) By assuming $Y$ is generated uniformly at random among sets of size $n_y$ and overlap $v$ we are making a specific choice that may not be optimal for all datasets.
+In the ``skewed data'' model of~\cite{mccauley2018set} a Bayesian might incorporate a particular presumption about the sets $Y$ and increase the precision of the estimator.
+2) We can get the same model by taking $Y$ to be known, but the hash values $h(y)$ to be unknown.
+This is more similar to the classical MinHash analysis, but doesn't make a big difference in our case, except by making it harder to be a Bayesian.
+3) If we do not consider $n_y$ to be known, we can let the model have two parameters and estimate both of them.
+We could for example count the frequency of set sizes in the database and build this into the model, however in the database model we might as well just store the set sizes and use them directly.
 
-We assume $|X|=n_x$, $|Y|=n_y$ and $|X\cap Y|=v$, the number of ways to sample such a $Y$ is
-% TODO: We need a figure, or at least better explanation for this.
+As a first step to computing $\ell(r;v)$ we not that $h$ can be assumed to take values in $[u]$ rather than $[0,1]$ and a be a bijection.
+However then $h$ simply represents a known permutation of $[u]$ and we can ignore it all together.
+Then the observed MinHash value is the random variable $R=\min_{y\in Y} y$.
+We define $n_x = |X|$, and $M = \sum_{x\in X} [x < R]$\footnote{We use the Iversonian notation $[P]=1$ if $P$ and $0$ otherwise.} to be the number of ``minner values'' -- a random variable which is a function of $R$.
+We proceed to prove the following proposition:
+\begin{proposition}
+   Let $m=m(r)=\sum_{x\in X}[x < r]$ then
 \[
-   \ell(m;v) = \begin{cases}
-\log\frac{\binom{x-k-1}{v-1}\binom{u-m-(x-k)}{y-v}}{\binom{x}{v}\binom{u-x}{y-v}}
-&
-\text{if $M\in h(X)$, and}
- \\
-\log\frac{\binom{x-k}{v}\binom{u-m-1-(x-k)}{y-v-1}}{\binom{x}{v}\binom{u-x}{y-v}}
-&
-\text{if $M\not\in h(X)$}
- \end{cases}
- \label{eq:prob}
+   \Pr_Y[R=r]
+    =
+    \begin{cases}
+      \frac{\binom{n_x-m-1}{v-1}\binom{u-r-(n_x-m)}{n_y-v}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
+      &
+      \text{if $r\in X$, and}
+       \\
+      \frac{\binom{n_x-m}{v}\binom{u-r-1-(n_x-m)}{n_y-v-1}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
+      & \text{if $r\not\in X$}
+    \end{cases}
  \]
-where $k$ is the number of values in $x$ smaller than $m$.
+ \label{prop:prob}
+\vspace{-1em} %Some weird spacing going on here.
+\end{proposition}
+\begin{proof}
+   Not considering $R$ there are $\binom{n_x}{v}\binom{u-n_x}{n_y-v}$ ways to choose $Y$ such that $|Y|=n_y$ and $|X\cap Y|=v$.
+   We proceed by cases..
 
-This is already enough to perform a maximum likelihood estimate.
+   First consider the case $r\in X$.
+   Then the remaining $v-1$ overlapping elements have to be chosen from $\{x\in X:x > r\}$.
+   by definition of $m$ there are $n_x-m-1$ such values.
+   The remaining $n_y-v$ non-overlapping elements have to be chosen from $\{x\not\in X: x > r \}$.
+   There are $u-r$ elements in $[u]$ greater than $r$, and of those $n_x-m$ are in $X$.
+   Thus the number of ways to choose $Y$ with $r\in X$ is
+   $\binom{n_x-m-1}{v-1}\binom{u-r-(n_x-m)}{n_y-v}$.
 
-TODO: Well, we need to say something about the case of $k>1$.
+   The case $r\not\in X$ follows by similar arguments.
+\end{proof}
 
-
+Using \cref{prop:prob} we can write the log-likelihood in the following concise manner:
+\[
+   \ell(r; v) = \log \frac{\binom{n_x-m-[r\in X]}{v-[r\in X]}\binom{u-r-[r\not\in X]-(n_x-m)}{n_y-v-[r\not\in X]}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}.
+   \label{eq:log-likelihood}
+\]
+If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the MinHash functions, a log likelihood of
+\[
+   \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
+\]
+It is trivial to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one has the highest log-likelihood.
+This gives our first estimator.
 
 \subsection{Analysis}
 
-As is commonly the case, it turns out to be quite hard to compute the mean and variance of the MLE estimator directly.
-% TODO: Which regularity conditions do we need for this?
-Instead we will not that MLE's are known to be asymptotically unbiased.
-Indeed we have
+We want to analyze the MLE estimator in the model where $h$ is unknown.
+In this setting we know that the variance of the classical MinHash estimator is
 \[
-   \sqrt{k}(\hat j - j_0) \to \mathcal N(0, 1/\mathcal I(j_0)),
+   \frac{E[(T-j)^2]}{K}
+      = \frac{E[T^2] - j^2}{K}
+      = \frac{\Pr[T=1] - j^2}{K}
+= \frac{j(1-j)}{K}.
 \]
-where $I(j_0)$ is the Fischer information of $m$.
-% TODO: Write $m$ in bold or with a capital $M$?
+This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
 
-TODO: Can I just argue this directly from CLT? That would save a lot of worries about Cramer Rao and stuff.
+TODO: We should talk about bias before variance.
 
-Thus the variance will be $1/(k I(j_0)) + o(1/k)$.
-Indeed this is the smallest variance of any estimator, which is why MLE is optimal.
+The main work of this section will be proving the following proportion:
+\begin{proposition}\label{prop:mle_var}
+   As $K\to\infty$, the variance of the MLE estimator converges to
+   \[
+      \frac{j (1+j)^3 n_y (n_y-j n_x) (n_x-j n_y)}{(n_x+n_y) \left((1+j)^2 n_xn_y - j^2 (n_x+n_y)^2\right)K}
+   \label{eq:mle_var}
+   \]
+   over the randomness of the random hash function.
+\end{proposition}
 
-Strictly speaking the Fischer information is only defined when the log-likelihood is differentiable in the parameter $j$, which is not the case here, since we know $\frac{j}{1+j}(x+y)$ is an integer.
-Relaxing this knowledge should only decrease the Fischer information (thus increase the variance) since we are throwing away somewhat useful information.
+\begin{figure}
+\includegraphics[trim=30 0 0 0,clip,width=\linewidth]{figures/mle_variance2}
+\caption{Variance of Maximum Likelihood Estimator based on Fischer Information bound.
+For $j$ close to 0 or 1 the worst case MLE bound is asymptotically equal to the Classical bound, whereas for $j\approx 0.21$ has only $\approx 62\%$ of the variance.}
+\label{fig:mle_variance}
+\end{figure}
 
-For twice differentiable $\ell(m;v)$,
-the Fischer information is defined as
+The bound is a little complicated by the fact that it includes the sizes of the sets $n_x$ and $n_y$.
+We note that the bound is convex in the ratio $n_y/n_x$, giving lower variances than \cref{eq:minvar} for $n_x<\!<n_y$ or $n_x >\!> n_y$.
+\Cref{fig:mle_variance} shows \cref{eq:mle_var} when the ratio is taken to be \emph{worst possible}, as well as when it is taken to be 1
+In the symmetric case $n_x=n_y$ the asymptotic variance reduces to
 \[
-   I(v) = -E[\frac{d^2}{dv^2}\ell(m;v)].
+   \frac{j(1-j)}{K}\frac{(1+j)^3}{2(1+3j)}.
 \]
+%for large $x$ and $y$.
+For $n_x/n_y\neq1$ the Jaccard similarity is bounded above by $\frac{\min\{n_x,n_y\}}{\max\{n_x,n_y\}}$, which allows the MLE to discard those higher values from consideration.
+Another interesting point from \cref{eq:mle_var} is that the variance at $n_x=c n_y$ is exactly $1/c$ of the variance at $n_x=n_y/c$.
+It makes sense that the variance is lower when $|X|$ is big compared to $|Y|$, since we are given $X$, but don't know $Y$.
 
+TODO: Stuff about local/global risk.
+We can also compute the global risk of the MLE estimator, which is $0.178847/K$, $28.5\%$ less than the Classical Estimator.
 
-\begin{lemma}\label{lem:fischer}
-   The Fischer information of the MinHash Statistic is
-   \[
-   I(v)
-   %= -E[\frac{d^2}{dv^2}\ell(m,k;v)]
-   \ge \frac{1}{y(x-v)} + \frac1{v(y-v)} + o(1/\min\{x,y\})
-   \]
-\end{lemma}
-\begin{proof}
-   We thus expand our likelihood using Stirling's approximation
-   \[
-      \log n! = n\log n - n + O(\log n),
-   \]
-   to get
+\begin{proof}[Proof of \cref{prop:mle_var}]
+   We first find the variance for the MLE estimator for $v$ and then show how to re-parametrize it to use the Jaccard similarity.
+
+   Using Stirling's approximation $ \log n! = n\log n - n + O(\log n)$,
+   we rewrite the log-likelihood \cref{eq:log-likelihood} as
    \begin{align}
-      \ell(m;v) &=
+      \ell(r;v) &=
       (x-k-[m\in x]+1)H(\tfrac{v-[m\in x]}{x-k-[m\in x]+1})
                - (x+1) H(\tfrac{v}{x+1})
               \\&+(u-m-[m\not\in x]-x+k+1) H(\tfrac{y-v-[m\not\in x]}{u-m-[m\not\in x]-x+k+1})
               \\& -(u-x+1) H(\tfrac{y-v}{u-x+1})
-   + O(\log u)
+   + O(\log u),
+   % TODO: We should probably also have error terms for n_y-v, n_x-v and so on.
    \end{align}
+   where $H(p)=p \log \frac{1}{p} + (1-p)\log \frac{1}{1-p}$ is entropy function.
 
-   Since Stirling's approximation also applies to derivatives (simply exchanging the sum and the derivative operator)
+   Standard results~\cite{panchenko2016lec3} on Maximum Likelihood estimators say that
+   the variance converges to $1/I(v)$ where
+   \[
+      I(v) = E\left[-\frac{d^2}{dv^2}\ell(m;v)\right]
+   \]
+   is known as the Fischer information.
+   \footnote{This is actually a bit more tricky than it seems, since
+      the standard proof of this fact~\cite{panchenko2016lec3} uses that the expectation is taken over the same probability space as $\ell$ is defined.
+      However one can check that the key step in which that is used is to show
+      $E[f''/f] = \int (f''(x)/f(x))f(x)dx = \int f''(dx) = (\int f(x)dx)'' = 0$, where $f=\exp(\ell)$ is the probability distribution.
+      Since $E_h[f''/f] = E_h[E_{h_{|\overline X}}f''/f] = E_h[0]= 0$
+      we can run the entire proof using $E_h$ rather than $E_{h_{|\overline X}}$ and get the same result.
+      Thus it suffices to thus focus on bounding $E_h[-\frac{d^2}{dv^2}\ell(m;v)].
+   % Something, something sigma algerba.
+      % Basically I'm arguing that we can run the whole proof of MLE asymptotics and consider very expectatation as over $E_h$ rather than $E_{h_{|X}}$
+   }
+
+   % Strictly speaking the Fischer information is only defined when the log-likelihood is differentiable in the parameter $j$, which is not the case here, since we know $\frac{j}{1+j}(x+y)$ is an integer.
+
+   %Since Stirling's approximation also applies to derivatives (simply exchanging the sum and the derivative operator)
    We can now evaluate the first two derivatives:
    {
       \thinmuskip=0mu
@@ -121,73 +191,43 @@ the Fischer information is defined as
       + (\tfrac1{x-v+1}-\tfrac1{x-v-k+1})
                                \\&
                                +[m\in x](\tfrac1{v+1}-\tfrac1{v})
-      + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1}) + O(1/u^2)
+      + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1}) \\&+ O(1/u^2)
+      \label{eq:deriv2}
+      .
    \end{align}
    }
 
+   There is something about the notation here.
+   With $r\in x$ I mean thee probability that the smallest hash of $Y$ is in $X$.
+   We now have three terms to bound:
+   $E[r \in x]$, $\tfrac1{x-v-k+1}$ and $\tfrac1{u-x-y+v-m+k+1}$.
+   The first is easy, since $m$ is a 
 
-   For the Fischer Information wee now need to take the expectation of the second derivative.
-   In particular we need to evaluate the quantities
-   $E[\frac{1}{x-v-k+1}]$ and $E[\frac{1}{u-x-y+v-m+k+1}]$.
-   Luckily this is not too hard:
-   % TODO: Argue on the basis of that whole seconday model thing
+   Combining all the terms and assuming $x,y,u\to\infty$ we get
    \[
-      E\left[\tfrac{1}{x-v-k+1}\right] = \tfrac{y}{(y-1)(x-v+1)}\left(1-\tfrac{1}{\binom{x+y-v}{y-1}}\right)
-   \]
-   \[
-      E\left[\tfrac{1}{u-x-y+v-m+k+1}\right] = \tfrac1{y-1}
-   \left(\tfrac{y}{u-x-y+v+1}-\tfrac1{\binom{u-x+v}{y}}\right)
-   =o(1)
+   I(v)
+   = \frac{1}{y(x-v)} + \frac1{v(y-v)} + o(1/\min\{x,y\}).
    \]
 
-   Combining all the terms and assuming $x,y,u\to\infty$ yields the lemma.
 
-
-
-   % To use this result, we need a twice differentiable $\ell$.
-   % For this we relax our  estimator to continuous $v$ in $[0,\min\{x,y\}]$.
-   % % TODO: That result about MLE's that are not exactly true
-   % 
-   % We use the following bound from~\cite{ahle2017optimal} Lemma 6.2:
-   % For $n \ge m \ge k \ge 0$ we have the following uniform bound of binomial ratios in terms of the entropy function $H(x)=x\log1/x+(1-x)\log1/(1-x)$:
-   % \[
-   %    \frac{\exp((n+1) H( \frac{k}{n+1} ))}{\exp((m+1) H( \frac{k}{m+1}))}
-   %    \le
-   %    \frac{\binom{n}{k}}{\binom{m}{k}}
-   %    %\binom{n}{k}\bigg/\binom{m}{k}
-   %    \le
-   %    \frac{\exp(n H(\frac kn))}{\exp(m H(\frac km))}
-   % \]
-   % with opposite 
-   % 
-   % Can we use the bound
-   % \[
-   %    0\le (n + 1) H[k/(n + 1)] - (n) H[k/(n)] \le  \frac{k}{\sqrt{n(n-k)}}
-   % \]
-   % for anything?
-   % Even once we've bounded $\ell'$ in terms of $\ell$, what do we really know about the MLE?
-   % About the differentiations?
-   % 
-   % Actually, Stirling's approximation works fine with derivatives, just interchange differentiation and summation.
-   % 
-   % I can also say that by relaxing the MLE by allowing more values (fractional values) I am only increasing the variance.
-   % % This is the version without +1 in the denominators
-   % % \begin{align}
-   % %    \frac{d}{dv}\ell(m,k;v)&=
-   % %    \log\left(\tfrac{(1-\tfrac1{y-v})^{[m\not\in x]}(1-\tfrac{k}{x-v})}{(1-\tfrac 1v)^{[m\in x]}(1-\tfrac{m-k}{u-x-y+v})}\right)
-   % %    \label{eq:d1}
-   % %    \\
-   % %    \frac{d^2}{dv^2}\ell(m,k;v)
-   % %                           &=
-   % %     [m\not\in x](\tfrac1{y-v}-\tfrac1{y-v-1})
-   % %    + (\tfrac1{x-v}-\tfrac1{x-v-k})
-   % %                             \\&
-   % %    +[m\in x](\tfrac1v-\tfrac1{v-1})
-   % %    + (\tfrac1{u-x-y+v}-\tfrac1{u-x-y+v-m+k})
-   % %    \label{eq:d2}
-   % % \end{align}
-   % 
+   We can now use the reparemetrization formula for Fischer Information to compute
+   \[
+      I(j) = I(v)/j'(v)^2
+   \]
+   where $j(v) = v/(x-y+v)$.
+   By the previously stated facts on Maximum Likelihood estimators, this proves the proposition.
 \end{proof}
+
+
+Relaxing this knowledge should only decrease the Fischer information (thus increase the variance) since we are throwing away somewhat useful information.
+
+For twice differentiable $\ell(m;v)$,
+the Fischer information is defined as
+\[
+   I(v) = -E[\frac{d^2}{dv^2}\ell(m;v)].
+\]
+
+
 
 %If $|x|=|y|=n$ that the variance $1/I(v)$ is maximized at $(\sqrt{2}-1)n$ with value $(\sqrt2-1)^2n^2$.
 %That's cool.
@@ -199,77 +239,10 @@ the Fischer information is defined as
 %or (the incomparible) $V(X) \le (\sqrt{2}-1)^2x^{1/2}y^{3/2}$.
 %It is natural that we have some assymetry between $x$ and $y$, since that's the whole point of this paper.
 
-We would like to compare the variance of the MLE estimator with the Classical MinHash estimator, which has variance
-% TODO: Decide whether our variances are given at K=1
-\[
-   j(1-j)/K.
-   \label{eq:minvar}
-\]
+
 Note that the variance of estimators usually depend on the answer.
 This is known as Local Risk.
 If we bound the variance by the worst possible parameter, in this case $j=1/2$ we get that the global risk of $1/(4K)$.
-
-\Cref{lem:fischer} gives the Fischer Information in terms of $v$.
-The relation between $I(v)$ and $I(j)$ is
-\[
-   I(j) = I(v)/j'(v)^2
-\]
-where $j(v) = v/(x-y+v)$.
-We have thus shown that the MLE has variance
-\[
-   1/I(j) + o(1)
-   \le
-   \frac{j (j+1)^3 y (y-j x) (x-j y)}{(x+y) \left(x y +2jxy -j^2 \left(x^2+x y+y^2\right)\right)}
-   + o(1)
-   \label{eq:mle_var}
-\]
-We note that the bound is convex in the ratio $y/x$, giving lower variances than \cref{eq:minvar} for $x<\!<y$ or $x >\!> y$.
-\Cref{fig:mle_variance} shows \cref{eq:mle_var} when the ratio is taken to be \emph{worst possible}, as well as when it is taken to be 1.
-In the symmetric case $x=y$ the variance can be easily expressed as
-\[
-   j(1-j)\frac{(1+j)^3}{2(1+3j)} + o(1)
-\]
-for large $x$ and $y$.
-For $x/y\neq1$ the Jaccard similarity is bounded above by $\frac{\min\{x,y\}}{\max\{x,y\}}$, which allows the MLE estimator to discard those higher values from consideration.
-
-Another interesting point from \cref{eq:mle_var} is that the variance at $x=cy$ is exactly $1/c$ of the variance at $x=y/c$.
-It makes sense that the variance is lower when $x$ is big compared to $y$, since we are given $x$, but don't know $y$.
-
-\begin{figure}
-\includegraphics[trim=30 0 0 0,clip,width=\linewidth]{figures/mle_variance2}
-\caption{Variance of Maximum Likelihood Estimator based on Fischer Information bound.
-For $j$ close to 0 or 1 the worst case MLE bound is asymptotically equal to the Classical bound, whereas for $j\approx 0.21$ has only $\approx 62\%$ of the variance.}
-\label{fig:mle_variance}
-\end{figure}
-
-We can also compute the global risk of the MLE estimator, which is $0.178847/K$, $28.5\%$ less than the Classical Estimator.
-
-% Nice example to include when we show how to compute the expectations in the MLE bound
-% Using
-% \begin{align}
-%    \frac1{x-v-k+1}\binom{x-k}{v}
-%    &=
-%    \frac1{x-v-k+1}\binom{x-k}{x-v-k}
-%  \\&=
-%    \frac1{x-k+1}\binom{x-k+1}{x-v-k+1}
-%  \\&=
-%    \frac1{x-k+1}\binom{x-k+1}{v}
-%  \\&=
-%    \frac1{v}\binom{x-k}{v-1}
-% \end{align}
-
-
-
-\subsection{Effect of approximation}
-
-What can wee still say about the variance of the original estimator given this relaxation?
-
-From http://galton.uchicago.edu/~eichler/stat24600/Handouts/l02.pdf
-
-If the model is incorrectly specified and the data $Y$ are sampled from a true
-density $f^*$ then the ML estimate converges to the value $\theta^*$ which minimizes
-the Kullback-Leibler information
-
 
 \subsection{Minner Estimator}
 

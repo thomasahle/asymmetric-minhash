@@ -14,17 +14,19 @@ While the algorithm is simple conceptually, there are a few tricks to making it 
       \State Initialize a max-heap.
       \For{$i=1$ to $n$}
          %\Comment{Number of contained values, minner values and sum of hashes.}
-         \State $C, M, V \gets 0, 0, 0$
+         \State $C, M, R \gets 0, 0, 0$
          \For{$i=1$ to $K$}
-         \State $V \gets V + D_{i,j}$
+         \State $R \gets R + D_{i,j}$
             \State $C\gets C + [D_{i,j} \in H_j]$ \label{line:contains}
-            \State $M \gets M + \sum_{v\in H_j} [v < D_{i,j}]$ \label{line:prefix}
+            \State $M \gets M + \sum_{r\in H_j} [r < D_{i,j}]$ \label{line:prefix}
          \EndFor
          \State $y \gets |Y_i|$
+         \Comment{Assuming the set sizes are stored}
          \State $v \gets \min\{\frac{C|X|}{C+M},\frac{Cy}{K}\}$
          \Comment{Minner Estimator}
          \For{$i=1$ to Newtons}
-            \State $\nu \gets \frac{V/u + C/(v+1) - (K-C)/(y-v+1) - M/(|X|-v+1)}
+            \Comment{Optional refinement}
+            \State $\nu \gets \frac{R/u + C/(v+1) - (K-C)/(y-v+1) - M/(|X|-v+1)}
             {C/(v+1)^2 + (K-C)/(y-v+1)^2 + M/(|X|-v+1)^2}$
             \State $v \gets \min\{\max\{0,v\}, |X|, y\}$
          \EndFor

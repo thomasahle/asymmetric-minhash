@@ -53,22 +53,23 @@ With more newton steps, however, the recall "recovers" to 0.1889 at newton=8.
 %Time preparing: t1=31.681596994400024, Time searching: t2=765.3667838573456
 
 The first table was wrong, because it didn't account for points with equal similarity.
-The following table fixes that probblem:
+The following table fixes that problem:
 \begin{table}[h!]
 \centering
  \begin{tabular}{|r| r r r r r|} 
  \hline
  K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
  \hline
- 1 & 0.0031 & 0.0074 & 0.0081 & 0.0065 & 0.0069 \\
- 10 & 0.0539 & 0.0349 & 0.0629 & 0.0511 & 0.0478 \\
- 30 & 0.1590 & . & 0.1904  & 0.1824 & 0.1732 \\
- 100 & 0.3946 & . & 0.4702 & 0.4896 & 0.4933  \\
- 500 & 0.8008 & . & . & . & . \\
+    1 & 0.0033 & 0.0076 & \textbf{ 0.0099} & 0.0057 & 0.0063 \\
+  10 & 0.0501 & 0.0396 & \textbf{ 0.0623} & 0.0506 & 0.0462 \\
+  30 & 0.1474 & 0.1773 & \textbf{ 0.1914} & 0.1910 & 0.1862 \\
+ 100 & 0.3831 &      . & 0.4640 & 0.4870 & \textbf{ 0.4903} \\
+ 400 & 0.7510 &      . & 0.8054 & 0.8326 & \textbf{ 0.8338} \\
+ 500 & 0.7942 &      . & 0.8440 & 0.8660 & \textbf{ 0.8667} \\
   \hline
  \end{tabular}
- \label{tab:flickr}
  \caption{Recall@10 on the Netflix dataset.}
+ \label{tab:netflix}
 \end{table}
 
 We can also test on the Flickr Dataset
@@ -78,14 +79,15 @@ We can also test on the Flickr Dataset
  \hline
  K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
  \hline
- 1 & 0.1660 & 0.2798 & 0.2968 & 0.2288 & . \\
- 10 & 0.7626 & . & . & . & . \\
- 20 & 0.8725 & . & . & . & . \\
- 30 & 0.9177 & . & . & . & . \\
+    1 & 0.2379 & 0.3410 & \textbf{ 0.3595} & 0.2806 & 0.2969 \\
+   5 & 0.6256 & 0.5457 & \textbf{ 0.6688} & 0.5913 & 0.6138 \\
+  10 & 0.7770 & 0.7155 & \textbf{ 0.8122} & 0.7327 & 0.7469 \\
+  20 & 0.8657 & 0.8540 & \textbf{ 0.8963} & 0.8217 & 0.8352 \\
+  30 & 0.9108 &      . & \textbf{ 0.9301} & 0.8597 & 0.8714 \\
   \hline
  \end{tabular}
- \label{tab:flickr}
  \caption{Recall@10 on the Flickr dataset.}
+ \label{tab:flickr}
 \end{table}
 
 %\subsection{Estimation: Hash functions vs Accuracy}
@@ -113,4 +115,5 @@ While this is not the main focus of the paper, we note that the results are cons
       Mean values with 1 standard deviation bounds (15.9\% percentile)
       on the estimation error for 5 million pairs from the Netflix dataset.
    }
+   \label{fig:var}
 \end{figure}

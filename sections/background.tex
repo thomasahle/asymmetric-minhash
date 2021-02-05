@@ -24,6 +24,9 @@ However for the simple task of estimating similarities in the many-one setting, 
 %Its application in the context of Jaccard estimation similarity
 %using hash has been studied by Thorup (STOC 2013).
 
+% TODO: Rasmus: Jeg tror også du bør sammenligne med bottom-k. Mikkels resultater om subset sum virker relevante, https://arxiv.org/abs/1303.5479
+
+
 \subsection{Quantization and Search}
 
 Since Jegou et al. 2010~\cite{jegou2010product} quantization has been a critical part of fast search data structures.
@@ -47,6 +50,9 @@ Most estimators for these sketches are of the symmetric type, so it would be int
 Of particular interest we mention HyperLogLog~\cite{flajolet2007hyperloglog}, HyperMinHash~\cite{yu2020hyperminhash}, MaxLogHash~\cite{wang2019memory}, SetSketch~\cite{DBLP:journals/corr/abs-2101-00314} and $b$-Bit MinHash~\cite{li2010b}.
 
 Even ``Classical'' MinHash as studied in this paper has variations, such as bottom-$k$ MinHash and $k$-partition MinHash. Cohen~\cite{DBLP:reference/algo/Cohen16b} gives a nice survey of those as well as many more variations and applications.
+Thorup~\cite{thorup2013bottom} analyses bottom-$k$ in a setting superficially similar to ours: For two sets $Y\subseteq X$ and $S$ a bottom-$k$ sketch of $X$, he bounds the deviation of $|S\cap Y$ from its expectation.
+That is, he compares a sketched set with an unsketched set.
+However, since $Y$ is a subset of $X$ it turns out, that for bottom-$k$ the intersection $S\cap Y$ is exactly the same as $S\cap S(Y)$, so he is still in the classical ``symmetric'' setting.
 
 %TKDE 2018 A Review for Weighted MinHash Algorithms
 %(How does my method relate to weighted minhash?)
