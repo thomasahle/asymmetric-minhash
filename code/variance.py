@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import random
 import math
 import bisect
@@ -55,22 +56,14 @@ class Minner:
         return v/(nx + ny - v)
 
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--out', type=str, default='synvar.png', help='Output filename')
-parser.add_argument('-N', type=int, default=None, help='Number of repetitions')
-parser.add_argument('-U', type=int, default=500, help='Universe Size')
-parser.add_argument('-X', type=int, default=30, help='X size')
-parser.add_argument('-Y', type=int, default=30, help='Y size')
-parser.add_argument('-K', type=int, default=30)
-args = parser.parse_args()
 
 
 def main():
-    x = args.X
-    y = args.Y
-    u = args.U
-    K = args.K
-    N = args.N
+    x = 30
+    y = 30
+    u = 500
+    K = 30
+    N = 100
     estimators = [MinHash(), Minner(), MLE(u)]
     labels = ['Classic MinHash', 'Minner Estimator', 'Maximum Likelihood']
     js = []
@@ -82,20 +75,25 @@ def main():
             rs, xss = zip(*[sample(u, x, y, v) for _ in range(K)])
             for i, e in enumerate(estimators):
                 estimates[i].append(e.estimate(u, x, y, xss, rs))
-        js.append(v/(x+y-v))
+        j = v/(x+y-v)
+        js.append(j)
         for i, es in enumerate(estimates):
-            series[i].append(statistics.variance(es))
+            #print(es)
+            series[i].append(K*statistics.variance(es, j))
+            #series[i].append(K*((np.array(es)-j)**2).mean())
+            #series[i].append(np.array(es).mean())
 
     import matplotlib.pyplot as plt
     for ss, label in zip(series, labels):
+        print(ss)
         plt.plot(js, ss, label=label)
     plt.legend()
     plt.xlabel('Variance')
     plt.ylabel('Jaccard Simmilarity')
 
-    #plt.show()
-    print('Writing to', args.out)
-    plt.savefig(args.out, dpi=600)
+    plt.show()
+    #print('Writing to', args.out)
+    #plt.savefig(args.out, dpi=600)
 
 
 if __name__ == '__main__':

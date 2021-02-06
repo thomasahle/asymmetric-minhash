@@ -18,6 +18,9 @@ We thus proceed to develop a third estimator that is as fast as the classical es
 We call it the Minner estimator and we show experimentally that it requires nearly as few MinHash values as the MLE for equivalent recall.
 In fact, for $K < 50$ it requires fewer values than even the MLE.
 
+A quick note on notation: If $u\in\mathbb N$, we use $[u]=\{0,\dots,u-1\}$ to indicate the set of numbers up to $u$.
+If $P$ is a proposition, we use $[P]$ to indicate the variable that is $1$ if $P$ and $0$ if not $P$.
+
 \subsection{Maximum Likelihood Estimator}
 
 Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model on the basis of the observation.
@@ -48,9 +51,10 @@ We could for example count the frequency of set sizes in the database and build 
 As a first step to computing $\ell(r;v)$ we not that $h$ can be assumed to take values in $[u]$ rather than $[0,1]$ and a be a bijection.
 However then $h$ simply represents a known permutation of $[u]$ and we can ignore it all together.
 Then the observed MinHash value is the random variable $R=\min_{y\in Y} y$.
-We define $n_x = |X|$, and $M = \sum_{x\in X} [x < R]$\footnote{We use the Iversonian notation $[P]=1$ if $P$ and $0$ otherwise.} to be the number of ``minner values'' -- a random variable which is a function of $R$.
+We define $n_x = |X|$, and $M = \sum_{x\in X} [x < R]$ to be the number of ``minner values'' -- a random variable which is a function of $R$.
 We proceed to prove the following proposition:
 \begin{proposition}
+   Let $r\in[u]$ be the MinHash of $Y$ and let $y^*$ (also $\in[i]$) be its index such that $h(y^*)=r$.
    Let $m=m(r)=\sum_{x\in X}[x < r]$ then
 \[
    \Pr_Y[R=r]
@@ -58,15 +62,18 @@ We proceed to prove the following proposition:
     \begin{cases}
       \frac{\binom{n_x-m-1}{v-1}\binom{u-r-(n_x-m)}{n_y-v}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
       &
-      \text{if $r\in X$, and}
+      \text{if $y^*\in X$, and}
        \\
       \frac{\binom{n_x-m}{v}\binom{u-r-1-(n_x-m)}{n_y-v-1}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
-      & \text{if $r\not\in X$}
+      & \text{if $y^*\not\in X$}
     \end{cases}
  \]
  \label{prop:prob}
 \vspace{-1em} %Some weird spacing going on here.
 \end{proposition}
+Note we take $\binom{n}{k}=0$ for $n<k$.
+In particular this may happen if $n_x-m<v$.
+The probability of $R=r$ in this case is 0, since $n_x-m$ is the number of x-ranks at least $r$, and all of $X\cap Y$ must have rank at least $r$.
 \begin{proof}
    Not considering $R$ there are $\binom{n_x}{v}\binom{u-n_x}{n_y-v}$ ways to choose $Y$ such that $|Y|=n_y$ and $|X\cap Y|=v$.
    We proceed by cases..
@@ -92,7 +99,15 @@ If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the
    \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
 \]
 It is trivial to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one has the highest log-likelihood.
-This gives our first estimator.
+\begin{definition}[Maximum Likelihood Estimator]
+   The Maximum Likelihood estimators for respectively set overlap and Jaccard similarity are
+   \begin{align}
+      T_v(r_1,\dots,r_K) &= \argmax_{v\in[\min\{n_x,n_y\}+1]} \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
+      \\T_j(r_1,\dots,r_K) &= \frac{T_v(r_1,\dots,r_K)}{n_x+n_y - T_v(r_1,\dots,r_K)}.
+   \end{align}
+\end{definition}
+%
+The definition gives our first estimator.
 
 \subsection{Analysis}
 
@@ -121,7 +136,9 @@ The main work of this section will be proving the following proportion:
 \begin{figure}
 \includegraphics[trim=30 0 0 0,clip,width=\linewidth]{figures/mle_variance2}
 \caption{Variance of Maximum Likelihood Estimator based on Fischer Information bound.
-For $j$ close to 0 or 1 the worst case MLE bound is asymptotically equal to the Classical bound, whereas for $j\approx 0.21$ has only $\approx 62\%$ of the variance.}
+For $j$ close to 0 or 1 the worst case MLE bound is asymptotically equal to the Classical bound, whereas for $j\approx 0.21$ has only $\approx 62\%$ of the variance.
+See \cref{fig:exp_variance} for a corresponding experimental test.
+}
 \label{fig:mle_variance}
 \end{figure}
 
@@ -147,9 +164,9 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    we rewrite the log-likelihood \cref{eq:log-likelihood} as
    \begin{align}
       \ell(r;v) &=
-      (x-k-[m\in x]+1)H(\tfrac{v-[m\in x]}{x-k-[m\in x]+1})
+      (x-k-[y^*\in X]+1)H(\tfrac{v-[y^*\in X]}{x-k-[y^*\in X]+1})
                - (x+1) H(\tfrac{v}{x+1})
-              \\&+(u-m-[m\not\in x]-x+k+1) H(\tfrac{y-v-[m\not\in x]}{u-m-[m\not\in x]-x+k+1})
+              \\&+(u-m-[y^*\not\in X]-x+k+1) H(\tfrac{y-v-[y^*\not\in X]}{u-m-[y^*\not\in X]-x+k+1})
               \\& -(u-x+1) H(\tfrac{y-v}{u-x+1})
    + O(\log u),
    % TODO: We should probably also have error terms for n_y-v, n_x-v and so on.
@@ -168,192 +185,186 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
       $E[f''/f] = \int (f''(x)/f(x))f(x)dx = \int f''(dx) = (\int f(x)dx)'' = 0$, where $f=\exp(\ell)$ is the probability distribution.
       Since $E_h[f''/f] = E_h[E_{h_{|\overline X}}f''/f] = E_h[0]= 0$
       we can run the entire proof using $E_h$ rather than $E_{h_{|\overline X}}$ and get the same result.
-      Thus it suffices to thus focus on bounding $E_h[-\frac{d^2}{dv^2}\ell(m;v)].
+      Thus it suffices to thus focus on bounding $E_h[-\frac{d^2}{dv^2}\ell(m;v)]$.
    % Something, something sigma algerba.
       % Basically I'm arguing that we can run the whole proof of MLE asymptotics and consider very expectatation as over $E_h$ rather than $E_{h_{|X}}$
    }
 
    % Strictly speaking the Fischer information is only defined when the log-likelihood is differentiable in the parameter $j$, which is not the case here, since we know $\frac{j}{1+j}(x+y)$ is an integer.
-
    %Since Stirling's approximation also applies to derivatives (simply exchanging the sum and the derivative operator)
+
+   TODO: Update notation
    We can now evaluate the first two derivatives:
    {
       \thinmuskip=0mu
    \begin{align}
       % Single diff
       \frac{d}{dv}\ell(m;v)&=
-   \log\left(\frac{(1-\frac1{y-v+1})^{[m\not\in x]}(1-\frac{k}{x-v+1})}{(1-\frac 1{v+1})^{[m\in x]}(1-\frac{m-k}{u-x-y+v+1})}\right) + O(1/u)
+      \log\left(\frac{(1-\frac1{y-v+1})^{[y^*\not\in X]}(1-\frac{k}{x-v+1})}{(1-\frac 1{v+1})^{[y^*\in X]}(1-\frac{m-k}{u-x-y+v+1})}\right) + O(1/u)
       \label{eq:deriv1}
       \\
       % Double diff
       \frac{d^2}{dv^2}\ell(m;v)&=
-       [m\not\in x](\tfrac1{y-v+1}-\tfrac1{y-v})
+       [y^*\not\in X](\tfrac1{y-v+1}-\tfrac1{y-v})
       + (\tfrac1{x-v+1}-\tfrac1{x-v-k+1})
                                \\&
-                               +[m\in x](\tfrac1{v+1}-\tfrac1{v})
+                               +[y^*\in X](\tfrac1{v+1}-\tfrac1{v})
       + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1}) \\&+ O(1/u^2)
       \label{eq:deriv2}
       .
    \end{align}
+   \vspace{-1em}
    }
 
-   There is something about the notation here.
-   With $r\in x$ I mean thee probability that the smallest hash of $Y$ is in $X$.
    We now have three terms to bound:
-   $E[r \in x]$, $\tfrac1{x-v-k+1}$ and $\tfrac1{u-x-y+v-m+k+1}$.
-   The first is easy, since $m$ is a 
+   $E[y^* \in X]$, $\tfrac1{x-v-k+1}$ and $\tfrac1{u-x-y+v-m+k+1}$.
+   Since any element of $Y$ has even chance of becoming the smallest, we have 
+   \[E[y^*\in X] = \Pr[y^*\in X] = \frac{v}{n_y}. \]
 
-   Combining all the terms and assuming $x,y,u\to\infty$ we get
+   When considering the rank, $r$, and the minner count, $m$, we'll assume the values of $h$ have exponential distribution.
+   This corresponds to using $\log1/h(x)$ instead of $h(x)$ which is a strictly monotone transformation and so equivalent in terms of comparing hash values.
+   Let $h^* = h(y^*)$ (different from $r$ which is the rank.)
+   Then $h^* = \min_{z\in y}h(z) \sim \text{Exp}(y)$ by stability of minimums of exponentially distributed random variables.
+
+   We can now see $m=\sum_{x\in X\setminus Y} [h(x) < h^*]$ as having binomial distribution $B(n_x-v, p)$, conditioning on $h^*$, where $p=\Pr[h(x)\le h^*] = 1-\exp(-h^*)$ by the CDF for the exponential distribution.
+   We only sum over $X\setminus Y$ rather than all of $X$ since no value in $X\cap Y$ can be smaller than $h^*$ by definition.
+   Because of the binomial revision
+   $\frac1{n-i+1}\binom{n}{i} = \frac1{n+1}\binom{n+1}{i}$
+   we can evaluate
+   \begin{align}
+      E_m\left[\tfrac1{n_x-v-m+1}\right]
+      &= E_{h^*}\left[\tfrac{1-p^{n_x-v+1}}{(1-p)(n_x-v+1)}\right]
+    \\&= \tfrac1{n_y-1}\left(\tfrac{n_y}{n_x-v+1} - \tfrac1{\binom{n_x+n_y-v}{n_y}}\right).
+    % TODO: Does something weird happen if v=n_x or v=n_y?
+   \end{align}
+
+   We can similar note that $r-m$ is the number of values in the complement of $X\cup Y$, and so has binomial distribution $B(u-n_x-n_y+v, p)$.
+   By the same argument as above, we get that
+   \[
+      E\left[\tfrac1{u-n_x-n_y-v-(r-m)+1}\right]
+      = \tfrac1{n_y-1}\left(\tfrac{n_y}{u-n_x-n_y+v+1} - \tfrac1{\binom{u-n_x-n_y+v}{y}}\right).
+   \]
+   Combining all the terms of \cref{eq:deriv2}, and assuming $n_x$ and $n_y$ sufficiently large we get the simple result
    \[
    I(v)
-   = \frac{1}{y(x-v)} + \frac1{v(y-v)} + o(1/\min\{x,y\}).
+   = \frac{1}{n_y(n_x-v)} + \frac1{v(n_y-v)} + O\left( \frac{1}{\min\{n_x,n_y\}} \right).
    \]
-
-
-   We can now use the reparemetrization formula for Fischer Information to compute
+   We can now use the re-parametrization formula for Fischer Information to compute
    \[
-      I(j) = I(v)/j'(v)^2
+      %I_j(j) = j'(v(j))^{-2}I_v(v(j))
+      I_j(j) = v'(j)^{2}I_v(v(j)),
    \]
-   where $j(v) = v/(x-y+v)$.
+   %where $j(v) = v/(x-y+v)$.
+   where $v(j) = \frac{j}{1+j}(x+y)$.
+   % eta = psi(theta)
+   % j = j(v)
+   % theta = psi^{-1}(eta)
+   % v = j^{-1}(j)
+   % I(j) = I(v)
    By the previously stated facts on Maximum Likelihood estimators, this proves the proposition.
 \end{proof}
 
-
-Relaxing this knowledge should only decrease the Fischer information (thus increase the variance) since we are throwing away somewhat useful information.
-
-For twice differentiable $\ell(m;v)$,
-the Fischer information is defined as
-\[
-   I(v) = -E[\frac{d^2}{dv^2}\ell(m;v)].
-\]
-
-
-
-%If $|x|=|y|=n$ that the variance $1/I(v)$ is maximized at $(\sqrt{2}-1)n$ with value $(\sqrt2-1)^2n^2$.
-%That's cool.
-%In general wee can get bounds like
-%\[
-   %V(X) \in [1-2\sqrt{2}/3, 1/16]\frac{m(4 xy-m^2)}{x},
-%\]
-%where $m=\min\{x,y\}$,
-%or (the incomparible) $V(X) \le (\sqrt{2}-1)^2x^{1/2}y^{3/2}$.
-%It is natural that we have some assymetry between $x$ and $y$, since that's the whole point of this paper.
-
-
-Note that the variance of estimators usually depend on the answer.
-This is known as Local Risk.
-If we bound the variance by the worst possible parameter, in this case $j=1/2$ we get that the global risk of $1/(4K)$.
+We have succeeded in analysing the variance of the Maximum Likelihood estimator.
+There are more questions to ask, such as how large $K$ must be to start seeing convergence to the stated bound.
+We give some experimental evidence for these questions in \cref{sec:estimation}.
 
 \subsection{Minner Estimator}
 
-The starting point of this derivation is \cref{eq:deriv1},
-to which we apply the approximation $\log(1-\eps) \approx -\eps$,
-to get the equation
-\[
-   \frac{d}{dv}\ell(m;v) \approx
-   -\frac{[m\not\in x]}{y-v} 
-   -\frac{k}{x-v} 
-   +\frac{[m\in x]}{v} 
-   +\frac{m-k}{y-x-y+v} 
-   = 0.
-\]
-When observing multiple $m_i's$, let $a=\sum_i [m\not\in x]$ and $b=\sum_i [m\in x]$.
-Similarly let $k=\sum_i k_i$ and $m=\sum_i m_i$.
-Then we want to solve
-\[
-   -\frac{a}{y-v} 
-   -\frac{k}{x-v} 
-   +\frac{b}{v} 
-   +\frac{m-k}{y-x-y+v} 
-   = 0.
-\]
-This can be rewritten as a degree three polynomial and solved by standard methods.
-However, we would like a simpler estimator still.
+\begin{figure}
+   \includegraphics[trim=10 0 45 40,clip,width=\linewidth]{figures/synvar_100000.png}
+   \caption{Measured variance of estimators, over 100,000 repetitions at $|X|=|Y|=K=30$ and $u=500$.
+      The MLE has already almost converged to \cref{fig:mle_variance}.
+      The Minner Estimator is seen to be particular good for low Jaccard similarities, which may be why it works so well on the practical datasets tested in \cref{sec:evaluation} which tend to have similarities concentrated in the $[0,0.2]$ range, as seen in \cref{fig:scatter}.}
+   \label{fig:exp_variance}
+\end{figure}
 
-In general we assume $u$ is very large, so we'll approximate $\frac{m-k}{u-x-y+v}\approx 0$.
-If we further approximate $\frac{a}{y-v}\approx 0$ we get the simple solution $v=\frac{bx}{b+k}$.
-This corresponds to the case where $v$ is small compared to $y$.
-Alternatively, if we approximate $\frac{k}{x-v}\approx 0$, we get $v=\frac{b y}{a+b}$.
-This corresponds to the case where $v$ is small compared to $x$.
-From this intuition we propose the following estimator:
+In the previous sections we derived and analysed a Jaccard similarity estimator based on Maximum Likelihood.
+The estimator has to evaluate the log-likelihood function, $\ell$, for all $v\in[\min\{n_x,n_y\}+1]$, which means it takes time at least $\Omega(K\min\{n_x,n_y\})$ per database point.
+
+In this section we investigate numerical methods for speeding up the MLE and suggests a new, very fast, estimator we call the Minner Estimator, which can be computed as fast as the classical MinHash estimator.
+
+The starting point of this derivation is the continuous derivative log-likelihood \cref{eq:deriv1},
+which we would like to solve $=0$ for $v$.
+If we apply the approximation $\log(1-\eps) \approx -\eps$,
+we we get
+\[
+   \frac{d}{dv}\ell(r;v) \approx
+   -\frac{[y^*\not\in X]}{n_y-v} 
+   -\frac{m}{n_x-v} 
+   +\frac{[y^*\in X]}{v} 
+   +\frac{r-m}{u-n_x-n_y+v} 
+   %= 0
+   .
+\]
+This is a convenient form, since it is linear in the variables, $[y^*\in X]$, $m$ and $r$.
+As we observe multiply $r_i$ values, we can define
+$R = \sum_i r_i$, $M = \sum_i m_i$ and $C = \sum_i [y_i^*\in X]$.
+This gives us a single equation to solve
+\[
+   \sum_i\frac{d}{dv}\ell(r_i; v) \approx
+   -\frac{K-C}{n_y-v} 
+   -\frac{M}{n_x-v} 
+   +\frac{C}{v} 
+   +\frac{R-M}{u-n_x-n_y+v} 
+   = 0
+   .
+   \label{eq:d1_simple}
+\]
+This equation can be rewritten as a degree three polynomial and solved by standard methods.
+The time complexity has thus been decreased from $\Omega(K\min\{n_x,n_y\})$ to $O(K)$ plus the time it takes to find the polynomial roots.
+
+However, solving a polynomial for every point in the database is hardly as fast as the classical MinHash estimator.
+
+However, we would like a simpler estimator still.
+In practice $u$ is very large (otherwise it wouldn't be set data), so we'll approximate $\frac{R-M}{u-n_x-n_y+v}\approx 0$.
+If we assume $n_y>\!>v$ we may approximate $\frac{K-C}{n_y-v}\approx 0$ we get the simple solution to \cref{eq:d1_simple}, $v=\frac{C n_x}{C+M}$.
+Alternatively, if $n_x>\!>v$ we approximate $\frac{M}{n_x-v}\approx 0$, we get $v=\frac{C n_y}{K}$.
+We then combine the two approximations into the following estimator:
 \begin{definition}[Minner Estimator]
 \[
-   T(m) = \min\left\{\frac{bx}{b+k}, \frac{b y}{a+b}\right\}.
+   T_v(r) = \min\left\{\frac{C n_x}{C+M}, \frac{C n_y}{K}\right\}.
    \label{eq:minner}
 \]
 \end{definition}
-The resulting value is clearly always in the acceptable range $[0,\min\{x,y\}]$.
 
-For Jaccard we do $j = v/(|X| + y - v)$
+The resulting value is clearly always in the acceptable range $[0,\min\{n_x, n_y\}]$, since $C\le C+M$ and $C \le K$.
+To estimate Jaccard we take $T_j(r) = v/(n_x + n_y - v)$.
+As before we can compute $C$ and $M$ in $O(K)$ time per database point, and now we have replaced the finalization of finding the roots of a polynomial with a simple division.
 
-%Another thing: There may still be some cases where there is no solution within the acceptable range.
-%I should probably do something about that?
+\hspace{.2em}
 
-We can improve upon the resulting estimate by Newton's method.
-This is a common idea in MLE design. % TODO: Cite somebody?
-
-TODO: I used to have some computations on this estimator as well...
-Something like
-\[
-   E[\frac{bx}{b+k}] = \frac{v}{y} E[\frac{x}{1+k}]
-\]
-and so on.
-
-\section{Old}
-
-
-We start from the lower bound side by considering the Cramer Rao bound with $k=1$.
-We define a random variable $Z$ to $\inf$ if $m\not\in x$ and $
-= \sum_{z\in x\setminus y} [h(z) \le h(m)]$ otherwise.
-
-Note that we can change the distribution of $h$ to be anything monotone without changing the probabilities.
-We'll now assume it has exponential distribution.
-%(Also note that that $\log 1/h(z)$ has exponential distribution.)
-let $h^* = h(m)$, then $h^* = \min_{z\in y}h(z) \sim \text{Exp}(y)$ by stability of minimums.
-We define $p=\Pr[h(z)\le h^*] = 1-\exp(-h^*)$.
-Conditioning on $h^*$ we see that $Z$ has binomial distribution $B(n,p)$ where $n=|x\setminus y|$.
-
-Back to the lower bound, 
-Cramer Rao asks us to define
-\[
-   I(j) = E_{z,p}\left[\left(\frac{d\ell(z,p;\; j)}{d\ell}\right)^2\right]
-\]
-where (for $z\not=\inf$)
+While $E[\frac{C n_y}{K}] = v$ is nice and unbiased (for estimating $v$), the combined estimator is not necessary so.
+Using the arguments from the previous analysis section, we find that for a single observation,\footnote{We were not able to analyse the case where $C$ and $M$ are the sum of multiple $c_i$ and $m_i$ values, nor the effect of combining the two estimators using the minimum.}
 \begin{align}
-   \exp(\ell(z;j))
-   &=\Pr[Z=z]
- \\&= \Pr[m\in x]E_{h^*}[\binom{n}{z}p^z(1-p)^{n-z}]
- \\&= \tfrac{v}{y}E_{h^*}[\binom{n}{z} (1-e^{-h^*})^z e^{-h^*(n-z)}]
- \\&= \frac{v}{n+y}\binom{n}{z}\bigg/\binom{n+y-1}{z}
+   E[\frac{c n_x}{c+m}]
+   &= \frac{v n_x}{y} E[\frac{n_x}{1+m}]
+   = \frac{v n_x}{x-v+1} (H_{x+y-v} - H_{y-1})
+ \\&\approx \frac{v n_x}{n_x-v+1} \log\frac{x+y-v}{y-1},
 \end{align}
-Approximating
+where $H_n$ is the $n$th Harmonic Number.
+
+While not unbiased, this is at least monotone in $v$, and similarity in $j$ if we convert it into Jaccard similarity.
+Experimentally the Minner Estimator follows the MLE very closely for smaller Jaccard similarities, but diverges slightly for larger $j$, just as we see on the variance side in~\cref{fig:sim_variance}.
+
+\hspace{.2em}
+
+We finally present a numerical way to combine the speed of the Minner Estimator with the consistency of the MLE.
+The idea is a common one in MLE design, which is to apply Newton's method to the problem of solving $\frac{d}{dv}\ell(r;v)=0$.%
+\footnote{People sometimes use Newton's method with the expected Hessian instead of the actual second derivative, however in our case we'll be able to efficiently compute it exact.}
+To maintain $O(K)$ complexity per database point we apply Newton's method to the approximate derivative equation \cref{eq:d1_simple}.
+This is nice, because the second derivative is still linear in $C$, $R$ and $M$:
 \[
-   \binom{n}{z}p^z(1-p)^{n-z} \sim \exp(-n D(z/n, p))
+   \sum_i\frac{d^2}{dv^2}\ell(r_i; v) \approx
+   \frac{K-C}{(n_y-v)^2} 
+   +\frac{M}{(n_x-v)^2} 
+   +\frac{C}{v^2}
+   +\frac{R-M}{(u-n_x-n_y+v)^2}
+   .
+   \label{eq:d2_simple}
 \]
+Newton's method now proceeds with iterations
+$v_{i+1} = v_i - \frac{\ell'(r; v_i)}{\ell''(r; v_i)}$.
 
-
-Let's assume all the hash values on $x$ are fixed in advance.
-Now we pick the values for $y\setminus x$.
-We set $m=\argmin_{y_i\in y} h(y_i)$.
-We are interested in the probability that $m\in x$ and $m=m^*$ for some element $m^*\in x\cap y$.
-We define $h^*=h(m^*)$.
-
-Let $Z$ be the minimum hash value in $y\setminus x$. Then it has distribution $\text{Exp}(|y|-v)$.
-We are going to have $m=m^*$ exactly when $Z$ is larger than $h^*$.
-(Such that no other value ``wins'' in $y$)
-We also need $m$ to be the smallest in $x\cap y$, but that is implied by $m\in x$, since the hash values in $x$ are fixed.
-Now $\Pr[Z \ge h^*] = \exp(h^*(|y|-v))$
-so the total probability is $\frac{v}{y}\exp(-h^*(|y|-v))$.
-This suggest the MLE of $v=-1/h^*$.
-That can't be..
-
-Maybe that whole combination argument is wrong.
-Surely once we have $\Pr[Z\ge h^*]$ we already have $m\in x$, so we don't actually have that factor $v/y$...
-
-What if I also use information when $m\not\in x$?
-I can still compute the hash value of $m$ and compare it to my own hash values...
-If $m\not\in x$ we have $Z < h^*$, where again $h^*$ is the smallest hash value in $x\cap y$.
-This happens with probability $1-\exp(-h^*(|y|-v))$ which is most likely at $v=0$.
-So this suggests a ``bang bang'' estimator, simply dependent on whether $m\in x$.
-This is however still different from the normal minhash estimator, which also asks for the value to be smallest in $x$.
+This concludes the derivation of the Minner Estimator with Newton refinement.
+In the next section we give pseudo-code matching what was used to perform our experiments on real world data.
 

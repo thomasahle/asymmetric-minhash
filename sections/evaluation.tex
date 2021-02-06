@@ -1,6 +1,6 @@
 %! TEX root = ../aminhash.tex
 
-\section{Evaluation by Experimentation}
+\section{Evaluation by Experimentation}\label{sec:evaluation}
 
 In this section, we show our proposed estimators lead to improved performance on maximum
 Jaccard similarity search on real datasets.
@@ -10,7 +10,7 @@ mechanism and compare traditional reconstruction
 loss with our proposed loss to show that score-aware
 loss leads to better retrieval performance and more accurate estimation of maximum inner product values.
 Next, we compare in fixed-bit-rate settings against
-QUIPS and LSQ, which are the current state-of-theart for many MIPS tasks. Finally, we analyze the
+QUIPS and LSQ, which are the current state-of-the art for many MIPS tasks. Finally, we analyze the
 end-to-end MIPS retrieval performance of our algorithm in terms of its speed-recall trade-off in a
 standardized hardware environment. We used the
 benchmark setup from ann-benchmarks.com, which
@@ -54,9 +54,11 @@ With more newton steps, however, the recall "recovers" to 0.1889 at newton=8.
 
 The first table was wrong, because it didn't account for points with equal similarity.
 The following table fixes that problem:
-\begin{table}[h!]
+\begin{table}
 \centering
  \begin{tabular}{|r| r r r r r|} 
+ \hline
+     \multicolumn{6}{|c|}{Recall@10 on the Netflix dataset} \\
  \hline
  K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
  \hline
@@ -68,14 +70,16 @@ The following table fixes that problem:
  500 & 0.7942 &      . & 0.8440 & 0.8660 & \textbf{ 0.8667} \\
   \hline
  \end{tabular}
- \caption{Recall@10 on the Netflix dataset.}
+ \caption{The Minner estimator is best at small $K$, but eventually the asymptotics kick in and the Maximum likelihood estimator overtakes. The MLE is very slow however, and one can get most of the benefits by applying a single iteration of Newton's method on top of the Minner Estimator.}
  \label{tab:netflix}
 \end{table}
 
 We can also test on the Flickr Dataset
-\begin{table}[h!]
+\begin{table}
 \centering
  \begin{tabular}{|r| r r r r r|} 
+ \hline
+     \multicolumn{6}{|c|}{Recall@10 on the Flickr dataset} \\
  \hline
  K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
  \hline
@@ -83,20 +87,23 @@ We can also test on the Flickr Dataset
    5 & 0.6256 & 0.5457 & \textbf{ 0.6688} & 0.5913 & 0.6138 \\
   10 & 0.7770 & 0.7155 & \textbf{ 0.8122} & 0.7327 & 0.7469 \\
   20 & 0.8657 & 0.8540 & \textbf{ 0.8963} & 0.8217 & 0.8352 \\
-  30 & 0.9108 &      . & \textbf{ 0.9301} & 0.8597 & 0.8714 \\
+  30 & 0.9108 & 0.9080 & \textbf{ 0.9301} & 0.8597 & 0.8714 \\
   \hline
  \end{tabular}
- \caption{Recall@10 on the Flickr dataset.}
+ \caption{The Flickr dataset is much easier than the Netflix dataset and as such doesn't require as many MinHash values to obtain good recall. The Maximum likelihood estimator never overcomes its asymptotic disadvantage, but the Minner Estimator beats the Classic estimator by up to $51\%$ at $K=1$.}
  \label{tab:flickr}
 \end{table}
 
 %\subsection{Estimation: Hash functions vs Accuracy}
 \subsection{Estimation: One way complexity of set similarity}
+\label{sec:estimation}
+
+TODO: Say something about \cref{fig:exp_variance}
 
 We also perform some experiments on estimation.
 While this is not the main focus of the paper, we note that the results are consistent with the variance computed for the MLE estimator.
 
-\begin{figure}[h]
+\begin{figure}
    %\hspace{-1em}
    \centering
    \includegraphics[trim=0 5 35 40,clip,width=\linewidth]{figures/hist2}
@@ -107,7 +114,7 @@ While this is not the main focus of the paper, we note that the results are cons
 }
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
    \centering
    % trim is left bottom right top
    \includegraphics[trim=0 0 35 40,clip,width=\linewidth]{figures/var2}

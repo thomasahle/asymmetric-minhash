@@ -4,7 +4,7 @@
 
 While the algorithm is simple conceptually, there are a few tricks to making it run as fast as the classical MinHash sketch.\footnote{We don't strive to be faster than the classical estimator for a fixed $K$, but for a given recall we can be faster, since our $K$ can be smaller.}
 
-\begin{algorithm}[H]
+\begin{algorithm}
    \caption{Given a query $X\subseteq [u]$ and a database $D\in [0,1]^{n\times K}$ of sketches of sets $Y_1,\dots\subseteq [u]$, the algorithm estimates the similarity with each $Y_i$.}
    \label{alg:query}
    \begin{algorithmic}[1]
@@ -18,6 +18,7 @@ While the algorithm is simple conceptually, there are a few tricks to making it 
          \For{$i=1$ to $K$}
          \State $R \gets R + D_{i,j}$
             \State $C\gets C + [D_{i,j} \in H_j]$ \label{line:contains}
+            \Comment{Done by single table lookup}
             \State $M \gets M + \sum_{r\in H_j} [r < D_{i,j}]$ \label{line:prefix}
          \EndFor
          \State $y \gets |Y_i|$
