@@ -117,7 +117,8 @@ In this setting we know that the variance of the classical MinHash estimator is
    \frac{E[(T-j)^2]}{K}
       = \frac{E[T^2] - j^2}{K}
       = \frac{\Pr[T=1] - j^2}{K}
-= \frac{j(1-j)}{K}.
+      = \frac{j(1-j)}{K}.
+      \label{eq:minvar}
 \]
 This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
 
@@ -234,9 +235,12 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    \begin{align}
       E_m\left[\tfrac1{n_x-v-m+1}\right]
       &= E_{h^*}\left[\tfrac{1-p^{n_x-v+1}}{(1-p)(n_x-v+1)}\right]
-    \\&= \tfrac1{n_y-1}\left(\tfrac{n_y}{n_x-v+1} - \tfrac1{\binom{n_x+n_y-v}{n_y}}\right).
+    \\&= \tfrac1{n_y-1}\left(\tfrac{n_y}{n_x-v+1} - \tfrac1{\binom{n_x+n_y-v}{n_y}}\right),
     % TODO: Does something weird happen if v=n_x or v=n_y?
    \end{align}
+   where the second equality follows by properties of the exponential distribution.
+   Note that the expectation is defined for all $n_y\ge 0$ by limits.%
+   \footnote{In particular at $y=1$ it equals $H_{n_x-v+1}/(n_x-v+1)$, where $H_n$ is the harmonic number.}
 
    We can similar note that $r-m$ is the number of values in the complement of $X\cup Y$, and so has binomial distribution $B(u-n_x-n_y+v, p)$.
    By the same argument as above, we get that
@@ -337,20 +341,23 @@ While $E[\frac{C n_y}{K}] = v$ is nice and unbiased (for estimating $v$), the co
 Using the arguments from the previous analysis section, we find that for a single observation,\footnote{We were not able to analyse the case where $C$ and $M$ are the sum of multiple $c_i$ and $m_i$ values, nor the effect of combining the two estimators using the minimum.}
 \begin{align}
    E[\frac{c n_x}{c+m}]
-   &= \frac{v n_x}{y} E[\frac{n_x}{1+m}]
-   = \frac{v n_x}{x-v+1} (H_{x+y-v} - H_{y-1})
- \\&\approx \frac{v n_x}{n_x-v+1} \log\frac{x+y-v}{y-1},
+   &= \frac{v n_x}{y} E[\frac{1}{1+m}]
+   = \frac{v n_x}{n_x-v+1} (H_{n_x+n_y-v} - H_{n_y-1})
+ \\&\approx \frac{v n_x}{n_x-v+1} \log\frac{n_x+n_y-v}{n_y-1},
+ \label{eq:minner_mean}
 \end{align}
 where $H_n$ is the $n$th Harmonic Number.
+If we let $n_x=n_y=n\to \infty$ we get $\eqref{eq:minner_mean} = \frac{2j}{1-j}\log\frac{2}{1+j}$, a quantity sandwiched between the Jaccard similarity, $j$, and the Sørensen–Dice coefficient, $\frac{2j}{1+j}$.
+While not unbiased, this is at least monotone in $j$ (respectively $v$).
 
-While not unbiased, this is at least monotone in $v$, and similarity in $j$ if we convert it into Jaccard similarity.
-Experimentally the Minner Estimator follows the MLE very closely for smaller Jaccard similarities, but diverges slightly for larger $j$, just as we see on the variance side in~\cref{fig:sim_variance}.
+Experimentally, the actual Minner Estimator seems to converge to $j$ for larger $K$, at least for the smaller $j$ seen in practice. See~\cref{fig:var}.
+For larger Jaccard similarities it slightly underestimate them, just as we see on the variance get worse as $j\to1$ in~\cref{fig:exp_variance}.
 
 \hspace{.2em}
 
 We finally present a numerical way to combine the speed of the Minner Estimator with the consistency of the MLE.
 The idea is a common one in MLE design, which is to apply Newton's method to the problem of solving $\frac{d}{dv}\ell(r;v)=0$.%
-\footnote{People sometimes use Newton's method with the expected Hessian instead of the actual second derivative, however in our case we'll be able to efficiently compute it exact.}
+\footnote{People sometimes use Newton's method with the expected Hessian instead of the actual second derivative~\cite{longford1987fast}, however in our case we'll be able to efficiently compute it exact.}
 To maintain $O(K)$ complexity per database point we apply Newton's method to the approximate derivative equation \cref{eq:d1_simple}.
 This is nice, because the second derivative is still linear in $C$, $R$ and $M$:
 \[

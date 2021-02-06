@@ -5,7 +5,7 @@
 In this section, we show our proposed estimators lead to improved performance on maximum
 Jaccard similarity search on real datasets.
 
-. First, we fix the quantization
+First, we fix the quantization
 mechanism and compare traditional reconstruction
 loss with our proposed loss to show that score-aware
 loss leads to better retrieval performance and more accurate estimation of maximum inner product values.
@@ -17,9 +17,8 @@ benchmark setup from ann-benchmarks.com, which
 provides 11 competitive baselines with pre-tuned parameters. We plot each algorithm’s speed-recall curve
 and show ours achieves the state-of-the-art.
 
-Mention stuff about
-Use of Stirling's approximation.
-Use of Newton's method.
+Something about how we can do regression on the tables and get a number of tables saved as a function of required recall.
+We assume a simple model $r = 1-\exp(-aK+b)$
 
 \subsection{Recall vs Memory usage}
 
@@ -70,7 +69,9 @@ The following table fixes that problem:
  500 & 0.7942 &      . & 0.8440 & 0.8660 & \textbf{ 0.8667} \\
   \hline
  \end{tabular}
- \caption{The Minner estimator is best at small $K$, but eventually the asymptotics kick in and the Maximum likelihood estimator overtakes. The MLE is very slow however, and one can get most of the benefits by applying a single iteration of Newton's method on top of the Minner Estimator.}
+ \caption{The Minner estimator is best at small $K$, but eventually the asymptotics kick in and the Maximum likelihood estimator overtakes. The MLE is very slow however, and one can get most of the benefits by applying a single iteration of Newton's method on top of the Minner Estimator.
+    For the midrange $K$ values 30 and 100 we get a near 30\% improvement in recall over the classical estimator.
+ }
  \label{tab:netflix}
 \end{table}
 
@@ -90,8 +91,29 @@ We can also test on the Flickr Dataset
   30 & 0.9108 & 0.9080 & \textbf{ 0.9301} & 0.8597 & 0.8714 \\
   \hline
  \end{tabular}
- \caption{The Flickr dataset is much easier than the Netflix dataset and as such doesn't require as many MinHash values to obtain good recall. The Maximum likelihood estimator never overcomes its asymptotic disadvantage, but the Minner Estimator beats the Classic estimator by up to $51\%$ at $K=1$.}
+ \caption{The Flickr dataset is much easier than the Netflix dataset and as such doesn't require as many MinHash values to obtain good recall. The Maximum likelihood estimator never overcomes its asymptotic disadvantage, but the Minner estimator improves 2-7\% in recall over the classic estimator, and all of $51\%$ at $K=1$.}
  \label{tab:flickr}
+\end{table}
+
+
+\begin{table}
+\centering
+ \begin{tabular}{|r| r r r r r|} 
+ \hline
+     \multicolumn{6}{|c|}{Recall@10 on the DBLP dataset} \\
+ \hline
+ K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
+ \hline
+    1 & \textbf{ 0.0105} & 0.0097 & 0.0071 & 0.0080 \\
+  10 & 0.1057 &      . & 0.0993 & \textbf{ 0.1072} \\
+  30 & 0.3264 &      . & \textbf{ 0.3445} &      . \\
+ 100 & \textbf{ 0.6145} &      . &      . &      . \\
+ 400 &      . &      . &      . &      . \\
+ 500 &      . &      . &      . &      . \\
+  \hline
+ \end{tabular}
+ \caption{...}
+ \label{tab:dblp}
 \end{table}
 
 %\subsection{Estimation: Hash functions vs Accuracy}

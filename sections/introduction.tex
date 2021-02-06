@@ -1,7 +1,10 @@
 %! TEX root = ../aminhash.tex
 
 \section{Introduction}
-Quantization a key ingredient in modern search systems.
+Quantization is the act of representing elements from a large or continuous space by a smaller set of discrete finite values.
+This reduction, also known as sketching or hashing, reduces the space requirement of the database and increases data locality improving processing performance.
+
+, or mapping  a key ingredient in modern search systems.
 By reducing the space required by data, it not only allows is critical to storing the data at all, it also increases data locality allowing faster search and algorithms working on the quantized data.
 %Reducing the space required to store data, it serves a double purpose of increasing data locality for faster search; and of actually allowing the data to be stored in the first place.
 
@@ -12,6 +15,7 @@ $q(x) = (\argmin_{x\in X}h_1(x), \dots, \argmin_{x\in X}h_K(x))$.
 After early uses in statistics~\cite{brewer1972selecting} and correlation estimation~\cite{flajolet1985probabilistic}, the term was coined by Broder~\cite{broder1997resemblance, broder1997syntactic} in the context of detecting near-duplicate web pages.
 
 MinHash is particularly popular for searching genomes and metagenomes in Bioinformatics~\cite{ondov2016mash} and other large sparse categorical data.
+% Also association rule algorihms: ~\cite{zheng2001real}
 A typical scenario is that we want to store some sets $Y_1, \dots$, so we compute the MinHash sketch for each of them, with perhaps $K=100$.
 Now, given a new set, $X$, we hash it and estimate the similarity with each $Y_i$ by $\|q(X)-q(Y_i)\|_1/k$, which has expectation $\frac{|X\cap Y|}{|X\cup Y|}$, known as the Jaccard similarity between $X$ and $Y$.
 
@@ -74,9 +78,17 @@ The Netflix dataset is originally from \href{https://www.cs.uic.edu/~liub/Netfli
 
 \subsection{Variance and the Model}
 
+Why do we care about MinHash?
+It is very popular in practice, and close to optimal~\cite{pagh2014min}
+
 TODO: Rasmus: ``Synes at introen er god. Kunne måske være mere eksplicit om hvad det er du måler. Er plads fx i antal bits eller antal elementer? Hvorfor netop varians?''
 
 Hvordan måler vi tingene?
 
 The Maximum Likelihood Estimator is quite complicated, and we have to work quite indirectly in order to analyze it.
+
+In our analysis we focus on minimizing variance (or squared error, since all but one of our estimators are unbiased).
+This allows precise analytic comparison to the classical MinHash estimator.
+In our experiments we focus on a more ``downstream'' measure: recall@10.
+
 

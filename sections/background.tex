@@ -26,6 +26,29 @@ However for the simple task of estimating similarities in the many-one setting, 
 
 % TODO: Rasmus: Jeg tror også du bør sammenligne med bottom-k. Mikkels resultater om subset sum virker relevante, https://arxiv.org/abs/1303.5479
 
+\begin{table}
+\centering
+ \begin{tabular}{|r|r| r r r r r|} 
+ \hline
+     \multicolumn{7}{|c|}{MinHashed Database} \\
+ \hline
+ id & Size, $n_y$  & r_1 & r_2 & r_3 & \dots & r_K \\
+ \hline
+ 0 & 254 & 4594 & 4439 & 9295 & \dots & 658  \\
+ 1 & 107 & 66 & 3675 & 457 &     \dots & 6805  \\
+ 2 & 3322 & 342 & 1173 & 11 &    \dots & 409  \\
+ 3 & 501 & 9928 & 226 & 603 &    \dots & 2784  \\
+  \hline
+ \end{tabular}
+ \caption{In this example MinHased Database four sets have been quantized into $K$ values each.
+    Instead of storing the value of $h:[u]\to[0,1]$ as a real number we have used the equivalent representation of ranks, in which $h$ is a random bijection $h:[u]\to[u]$.
+    This allows more efficient compression of the MinHash values.
+ }
+\end{table}
+
+
+
+
 
 \subsection{Quantization and Search}
 
