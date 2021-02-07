@@ -17,8 +17,18 @@ benchmark setup from ann-benchmarks.com, which
 provides 11 competitive baselines with pre-tuned parameters. We plot each algorithm’s speed-recall curve
 and show ours achieves the state-of-the-art.
 
-Something about how we can do regression on the tables and get a number of tables saved as a function of required recall.
-We assume a simple model $r = 1-\exp(-aK+b)$
+
+Experimentally we find that we can increase recall@10 by 50\% at small values of $K$.
+We run our experiments on the Flickr dataset and the Netflix dataset from a recent set-similarity join survey by Mann et al.~\cite{mann2016empirical}.
+In the survey these datasets were identified as archetypical examples with and without Zipf-like behaviour.
+\footnote{Mann et al. writes:
+ ``Most datasets, like FLICKR (cf. Figure 7), show a Zipf-like
+ distribution and contain a large number of infrequent tokens (less
+ than 10 occurrences), which favors the prefix filter. In contrast,
+ NETFLIX has almost no tokens that occur less than 100 times,''
+ }
+In practice this means that the Netflix dataset requires a much larger $K$, for reasonable recall, than the Flickr dataset, but we still get substantial improvements in recall on both.
+The Netflix dataset is originally from \href{https://www.cs.uic.edu/~liub/Netflix-KDD-Cup-2007.html}{KDD-Cup 2007}.
 
 \subsection{Recall vs Memory usage}
 
@@ -29,6 +39,37 @@ We are interested in how the number of hash functions / hash values per stored s
 The number of such values is directly proportional to the memory required to store the dataset.
 %We measure memory in the number of independent hash functions we need to store values from.
 \footnote{Each value can be stored in a word, and it is possible to compress them further, usually down to around a byte without loss of accuracy.}
+
+Measuring improvement in terms of increase in recall is a bit tricky, since a $98\%$ to $99\%$ improvement may be much harder to get than a $40\%$ to $44\%$, even if the later is 4 times bigger in terms of percentage points gained.
+Instead we opt to measure improvement in terms of how many more MinHash values we would have needed with the classical estimator to obtain the recall of our best estimator.
+This has the advantage of corresponding directly to space saved.
+
+To measure the improvement in terms of increased $K$ values,
+we assume a simple model $\text{recall@10} = 1 - \exp(K/a)$ for some constant $a$ depending on the estimator and the dataset.
+Thus for recall $r$ we need $K=a\log\frac1{1-r}$ MinHash Values.
+For a given recall $r$ the improvement of model $a_1$ over $a_2$ in terms of $K$ is thus a factor $a_1/a_2$.
+
+We perform regressions (with L2 loss) based on this model and the data in tables \ref{tab:netflix}, \ref{tab:flickr} and \ref{tab:dblp}.
+For Netflix we get $a_\text{clas}=300.7$ and $a_\text{best} = 233.9$ showing an improvement of $28.5\%$ in terms of $K$ values.
+For Flickr we get $a_\text{clas}=10.73$ and $a_\text{best} = 9.644$, corresponding to an $11.3\%$ improvement,
+and for DBLP we get $a_\text{clas}=204.2$ and $a_\text{best}=168.3$, a $21.4\%$ improvement.
+
+% Data:
+% (py38) thdy@preciousss:~/asymmetric-minhash/code$ py regression.py flickr
+% [10.73395277]
+% [9.64429099]
+% [0.11298516]
+% [0.10151542]
+% (py38) thdy@preciousss:~/asymmetric-minhash/code$ py regression.py netflix
+% [300.68230093]
+% [233.91258753]
+% [0.28544729]
+% [0.22206067]
+% (py38) thdy@preciousss:~/asymmetric-minhash/code$ py regression.py dblp
+% [204.22362543]
+% [168.26528607]
+% [0.21370028]
+% [0.17607336]
 
 The following shows the effect on recall@10 with 10,000 queries:
 
@@ -104,12 +145,12 @@ We can also test on the Flickr Dataset
  \hline
  K  & Classic & MLE & Minner & Minner 1N & Minner 8N \\
  \hline
-    1 & \textbf{ 0.0105} & 0.0097 & 0.0071 & 0.0080 \\
-  10 & 0.1057 &      . & 0.0993 & \textbf{ 0.1072} \\
-  30 & 0.3264 &      . & \textbf{ 0.3445} &      . \\
- 100 & \textbf{ 0.6145} &      . &      . &      . \\
- 400 &      . &      . &      . &      . \\
- 500 &      . &      . &      . &      . \\
+    1 & 0.0036 & 0.0097 & \textbf{ 0.0105} & 0.0071 & 0.0080 \\
+  10 & 0.0987 & 0.0998 & 0.1057 & 0.0993 & \textbf{ 0.1072} \\
+  30 & 0.2978 & 0.3438 & 0.3264 & 0.3445 & \textbf{ 0.3524} \\
+ 100 & 0.5736 &      . & 0.6145 & 0.6519 & \textbf{ 0.6536} \\
+ 400 & 0.8676 &      . & 0.8932 & 0.9148 & \textbf{ 0.9153} \\
+ 500 & 0.9009 &      . & 0.9214 & 0.9380 & \textbf{ 0.9385} \\
   \hline
  \end{tabular}
  \caption{...}

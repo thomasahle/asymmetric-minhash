@@ -1,0 +1,83 @@
+\documentclass[acmtog,anonymous,timestamp,review]{acmart}
+
+\input{header}
+
+
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+%\setcopyright{acmcopyright}
+%\copyrightyear{2020}
+%\acmYear{2020}
+%\acmDOI{10.1145/1122445.1122456}
+
+%% These commands are for a PROCEEDINGS abstract or paper.
+% \acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+%   Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+% \acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+%   June 03--05, 2018, Woodstock, NY}
+% \acmPrice{15.00}
+% \acmISBN{978-1-4503-XXXX-X/18/06}
+
+
+
+\begin{document}
+
+% https://tex.stackexchange.com/a/331766/24956
+%\hypersetup{pageanchor=false}
+
+
+
+% Double blind
+%\author{Anonymous}
+\author{Thomas D. Ahle}
+\email{thomas@ahle.dk}
+\orcid{0000-0001-9747-0479}
+\affiliation{%
+   \institution{Basic Algorithms Research Copenhagen (BARC), Facebook}
+}
+
+\input{sections/abstract.tex}
+
+%Mining, Inference, and Learning: These topics are the kernel of knowledge discovery from databases (KDD) paradigm and continue to witness massive growth. While classical aspects of supervised learning have been mainstreamed into the development cycle, new variations on unsupervised learning like self-supervision, few shot learning, prescriptive learning (reinforcement learning), transfer learning, meta learning, and representational learning are pushing the research boundary in a world where the proportion of labeled and annotated data is becoming minuscule.
+% In each of these topics, we seek submissions that highlight the trade-off between accuracy, stability, robustness, and efficiency.
+% Submissions that propose “new” inference tasks are strongly encouraged.
+
+% highlight the trade-off between accuracy, stability, robustness, and efficiency.
+
+
+% \ccsdesc[500]{Computer systems organization~Embedded systems}
+% \ccsdesc[300]{Computer systems organization~Redundancy}
+% \ccsdesc{Computer systems organization~Robotics}
+% \ccsdesc[100]{Networks~Network reliability}
+
+%%
+%% Keywords. The author(s) should pick words that accurately describe
+%% the work being presented. Separate the keywords with commas.
+\keywords{datasets, quantization, minhash, estimation, sketching, similarity join}
+
+\maketitle
+
+\input{sections/introduction}
+\input{sections/background.tex}
+\input{sections/estimation.tex}
+\input{sections/algorithm.tex}
+\input{sections/evaluation.tex}
+\input{sections/conclusion.tex}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{minner}
+
+
+%\appendix
+%\input{sections/appendix.tex}
+\end{document}
+

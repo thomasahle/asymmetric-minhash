@@ -32,7 +32,7 @@ However for the simple task of estimating similarities in the many-one setting, 
  \hline
      \multicolumn{7}{|c|}{MinHashed Database} \\
  \hline
- id & Size, $n_y$  & r_1 & r_2 & r_3 & \dots & r_K \\
+ id & Size, $n_y$  & $r_1$ & $r_2$ & $r_3$ & \dots & $r_K$ \\
  \hline
  0 & 254 & 4594 & 4439 & 9295 & \dots & 658  \\
  1 & 107 & 66 & 3675 & 457 &     \dots & 6805  \\
@@ -44,6 +44,7 @@ However for the simple task of estimating similarities in the many-one setting, 
     Instead of storing the value of $h:[u]\to[0,1]$ as a real number we have used the equivalent representation of ranks, in which $h$ is a random bijection $h:[u]\to[u]$.
     This allows more efficient compression of the MinHash values.
  }
+ \label{tab:minhash-example}
 \end{table}
 
 

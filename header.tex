@@ -1,6 +1,9 @@
 %\usepackage[utf8]{inputenc}
 \usepackage[UKenglish]{babel}
 
+% Try with lua
+%\usepackage{luatexbase}
+
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amsfonts}
@@ -12,53 +15,31 @@
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
 
-% Thomas packages
-
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
-\usepackage{enumitem}
-\usepackage{multicol}
-\usepackage{hyperref}
+
+% ACM Art already does
+% \RequirePackage[bookmarksnumbered,unicode]{hyperref}
+%\usepackage{hyperref}
+
+
+% I give up
+%\usepackage{silence}% Filter out unwanted warnings and error messages
+%\WarningFilter{pdftex}{destination with the same}% Remove all warnings issued by pdfTeX
+                                                 % (as pdfTeX Warning: 'destination with the same'...)
+
 \usepackage{cleveref}
 \let\globcount\newcount % https://tex.stackexchange.com/questions/285950/package-autonum-needs-the-obsolete-etex-package
+%\expandafter\def\csname ver@etex.sty\endcsname{3000/12/31}
 \usepackage{autonum}
-\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
 
-\DeclareMathOperator{\poly}{poly}
-\DeclareMathOperator{\sign}{sign}
-\DeclareMathOperator{\asvec}{vec}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 % Allow page break in align
-\allowdisplaybreaks
+% \allowdisplaybreaks
 
-
-\usepackage{mathtools}
-\DeclarePairedDelimiterX{\infdivx}[2]{(}{)}{#1 \,\delimsize\|\, #2}
-\DeclareMathOperator*{\Div}{D}
-\newcommand{\D}{\Div\infdivx}
-\DeclareMathOperator*{\smallDiv}{d}
-\newcommand{\di}{\smallDiv\infdivx}
-\DeclareMathOperator*{\h}{h}
 
 % Jakob packages
 \newcommand{\eps}{\varepsilon}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Z}{\mathbb{Z}}
-
-\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
-\newcommand{\set}[1]{\left\{ #1 \right\}}
-\newcommand{\setbuilder}[2]{\left\{ #1 \; \middle\vert \; #2 \right\}}
-\newcommand{\norm}[2]{\left\| #1 \right\|_{#2}}
-\newcommand{\innerprod}[2]{\left\langle #1, \; #2 \right\rangle}
-
-\newcommand{\Prp}[1]{\Pr\!\left[#1 \right]}
-\newcommand{\Prpcond}[2]{\Pr\!\left[#1 \; \middle| \; #2 \right]}
-\DeclareMathOperator*{\Ep}{E}
-\newcommand{\Epcond}[2]{\text{E}\!\left[#1 \; \middle| \; #2 \right]}
-
-\newcommand{\br}[1]{\left( #1 \right)}
-
-
-\newcommand{\smat}[1]{\left[\begin{smallmatrix}#1\end{smallmatrix}\right]}
-\newcommand{\svec}[1]{[\begin{smallmatrix}#1\end{smallmatrix}]}

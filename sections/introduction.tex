@@ -1,39 +1,42 @@
 %! TEX root = ../aminhash.tex
 
 \section{Introduction}
-Quantization is the act of representing elements from a large or continuous space by a smaller set of discrete finite values.
-This reduction, also known as sketching or hashing, reduces the space requirement of the database and increases data locality improving processing performance.
+Set data (or sparse binary or categorical data) is a staple of data science.
+Efficient search and joins of such data is used in document deduplication~\cite{broder1997syntactic}, association rule learning ~\cite{zheng2001real}, and 
+for searching genomes and metagenomes in Bioinformatics~\cite{ondov2016mash}.
 
-, or mapping  a key ingredient in modern search systems.
-By reducing the space required by data, it not only allows is critical to storing the data at all, it also increases data locality allowing faster search and algorithms working on the quantized data.
+Quantization is the act of representing data from a large or continuous space by a smaller set of discrete finite values.
+Also known as sketching or hashing, this often allows storing very large datasets on a single computer, or on fewer servers than otherwise needed.
+At the same time, because the compression and increases data locality, it has become a key component to processing such data efficiently.
+
+%By reducing the space required by data, it not only allows is critical to storing the data at all, it also increases data locality allowing faster search and algorithms working on the quantized data.
 %Reducing the space required to store data, it serves a double purpose of increasing data locality for faster search; and of actually allowing the data to be stored in the first place.
 
-MinHash sketches (Min-wise sketches) are randomized summaries of sets (or equivalently $0/1$ vectors).
+MinHash sketches are randomized quantizations of sets (or equivalently $0/1$ vectors).
 The idea is to pick $K$ random functions $h_i : U \to [0,1]$ and define the sketch of $X\subseteq U$ to be
-$q(x) = (\argmin_{x\in X}h_1(x), \dots, \argmin_{x\in X}h_K(x))$.
+\[q(x) = (\argmin_{x\in X}h_1(x), \dots, \argmin_{x\in X}h_K(x)).\]
 % TODO: references
 After early uses in statistics~\cite{brewer1972selecting} and correlation estimation~\cite{flajolet1985probabilistic}, the term was coined by Broder~\cite{broder1997resemblance, broder1997syntactic} in the context of detecting near-duplicate web pages.
+The sketch is known to be near-optimal~\cite{pagh2014min} for estimating set similarity on a given space budget.
 
-MinHash is particularly popular for searching genomes and metagenomes in Bioinformatics~\cite{ondov2016mash} and other large sparse categorical data.
-% Also association rule algorihms: ~\cite{zheng2001real}
-A typical scenario is that we want to store some sets $Y_1, \dots$, so we compute the MinHash sketch for each of them, with perhaps $K=100$.
-Now, given a new set, $X$, we hash it and estimate the similarity with each $Y_i$ by $\|q(X)-q(Y_i)\|_1/k$, which has expectation $\frac{|X\cap Y|}{|X\cup Y|}$, known as the Jaccard similarity between $X$ and $Y$.
+A typical scenario is that we want to store some sets $Y_1, \dots$, so we compute the MinHash for each of them, with perhaps $K=30$.
+(See \cref{tab:minhash-example} for an example quantized database.)
+Now, given a new set, $X$, we quantize it and estimate the similarity with each $Y_i$ by $\|q(X)-q(Y_i)\|_1/k$, which has expectation $\frac{|X\cap Y_i|}{|X\cup Y_i|}$, known as the Jaccard similarity between $X$ and $Y_i$.
+Since $q(X)$ only has to be computed once, and each subsequent estimate takes time $O(K)$, rather than $|X \cap Y|$ if we were to compute the Jaccard similarity directly.
+Thus, the quantized database can be searched substantially faster than the direct approach.
+Sketching can also be combined with space partitions to produce state of the art performing set similarity search~\cite{christiani2018scalable}, but in this paper we focus on quantization only.
 
-Since $q(X)$ only has to be computed once, and east subsequent estimate takes time $K$, rather than $|X \cap Y|$, the quantized database can often be searched substantially faster than the naive approach.
-Such quantization can be combined with space partition methods to produce state of the art set search, such as~\cite{christiani2018scalable}.
-
-Quantization is similarly important in nearest neighbour search in Euclidean distance.
+Quantization is also central in state of the art Euclidean nearest neighbour search and Maximum Inner Product Search (MIPS)~\cite{guo2020accelerating}.
 In their seminal paper, Jegou et al.~\cite{jegou2010product}
 %recognized that compressed representations allow for faster search, even when the data is already dense in $\R^{100}$, say.
 %This is mainly due to greater data locality and cache usage.
-argued for the application of ``asymmetric distance estimation'' as a way to improve search accuracy and speed in this context.
-Instead of sketching the query and computing the similarity ``in sketch-space'', $\|q(x)-q(y)\|_1$,
-one can use the full information of the query and compute $\|x-q(y)\|_1$ with no loss in speed or memory efficiency.
-see~\cref{fig:jegou} for a visualization.
+argued for the application of \eemph{asymmetric distance estimation} as a way to improve search accuracy and speed in this context.
+Instead of sketching the query and computing the similarity ``in sketch-space'', $\|q(x)-q(y)\|_2$,
+one can use the full information of the query and compute $\|x-q(y)\|_2$ reducing the space requirement for equal recall by up to a factor of four.
+See~\cref{fig:jegou} for a visualization.
 %For example, a search engine may store sketches of billions of documents to be searched, but when a query arrives, there is no performance reason to sketch it.
 
-
-\begin{figure}[h]
+\begin{figure}
    \centering
    \includegraphics[width=\linewidth]{figures/pq}
 \caption{Figure by Jegou et al.~\cite{jegou2010product} illustrating the difference between symmetric and asymmetric estimation, as used in Euclidean Nearest Neighbour Search.
@@ -45,50 +48,37 @@ see~\cref{fig:jegou} for a visualization.
 \end{figure}
 
 
-While this is a natural idea in Euclidean space, it is less clear how it may apply in the context of set search and MinHash.
-Somehow we have to compute a similarity value, given $X$ and $q(Y)$ better than $\|q(X)-q(Y)\|_1/K$, since presumably we're throwing information away about $X$ by sketching it.
-We can see how this may be possible by considering the case where the MinHash rank of $Y$ is not equal to the MinHash rank of $X$, but is perhaps equal to the second or third smallest rank.
-That ought to count as nearly as good as the ranks being equal, even if the classical MinHash sketch would count it as 0.
+While asymmetric estimation is a natural idea for Euclidean distance, it is less clear how it might apply in the context of set search and MinHash quantization.
+Somehow we have to compute a similarity value, given $X$ and $q(Y)$ better than $\|q(X)-q(Y)\|_1/K$.
+%, since presumably we're throwing information away about $X$ by sketching it.
+An indication that this may be possible is the case where the MinHash value of $Y$ is not equal to the MinHash of $X$, but is perhaps equal to the second or third smallest value---that ought to count as evidence towards the sets being similar, even if the classical MinHash sketch would count it as evidence to the opposite.
 
-% TODO: Can we make sure this is on the first page?
 \subsection{Results}
 
 In this paper we take a principled approach to this problem.
 \begin{enumerate}
-   \item We derive and analyse the Maximum Likelihood Estimator for MinHash.
-      We show that the variance is about half of the variance of the classical sketch-space estimator. (See figures \ref{fig:var} and \ref{fig:mle_variance}.)
-   \item We study various relaxations, trading precision for speed of estimation. (See tables \ref{tab:netflix} and \ref{tab:flickr}.)
-      A particular good choice is dubbed the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a rank \emph{smaller than the minimum} hash of $Y$.
+   \item We derive an estimator based on maximum likelihood.
+      We analyse its variance, which we find to be nearly half of the variance of the classical sketch-space estimator. (See figures \ref{fig:var} and \ref{fig:mle_variance}.)
+   \item We investigate relaxations and numerical methods, trading precision for speed of estimation. (See tables \ref{tab:netflix} and \ref{tab:flickr}.)
+      A particular good choice is dubbed the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a value \emph{smaller than the minimum} hash value of $Y$.
+   \item We run experiments on several large set datasets from~\cite{mann2016empirical},
+      such as the Netflix dataset originally from \href{https://www.cs.uic.edu/~liub/Netflix-KDD-Cup-2007.html}{KDD-Cup 2007}.
+      We show a reduction in the MinHash values needed of up to 30\% for a given recall@10.
 \end{enumerate}
 
-While our contribution is mainly in applications that can be characterized as one-many, such as search, many applications characterized as many-many are trivially reduced to $n$ times one-many.
-We thus also obtain better performance for tasks such as duplicate detection and nearest neighbour graph construction.
+While our focus is mainly on applications characterized as ``one-many'', such as search, many applications characterized as ``many-many'' are trivially reduced to $n$ times one-many.
+We thus also obtain better performance for important tasks such as duplicate detection and nearest neighbour graph construction.
 
-Experimentally we find that we can increase recall@10 by 50\% at small values of $K$.
-We run our experiments on the Flickr dataset and the Netflix dataset from a recent set-similarity join survey by Mann et al.~\cite{mann2016empirical}.
-In the survey these datasets were identified as archetypical examples with and without Zipf-like behaviour.
-\footnote{Mann et al. writes:
- ``Most datasets, like FLICKR (cf. Figure 7), show a Zipf-like
- distribution and contain a large number of infrequent tokens (less
- than 10 occurrences), which favors the prefix filter. In contrast,
- NETFLIX has almost no tokens that occur less than 100 times,''
- }
-In practice this means that the Netflix dataset requires a much larger $K$, for reasonable recall, than the Flickr dataset, but we still get substantial improvements in recall on both.
-The Netflix dataset is originally from \href{https://www.cs.uic.edu/~liub/Netflix-KDD-Cup-2007.html}{KDD-Cup 2007}.
 
-\subsection{Variance and the Model}
-
-Why do we care about MinHash?
-It is very popular in practice, and close to optimal~\cite{pagh2014min}
-
-TODO: Rasmus: ``Synes at introen er god. Kunne måske være mere eksplicit om hvad det er du måler. Er plads fx i antal bits eller antal elementer? Hvorfor netop varians?''
-
-Hvordan måler vi tingene?
-
-The Maximum Likelihood Estimator is quite complicated, and we have to work quite indirectly in order to analyze it.
-
-In our analysis we focus on minimizing variance (or squared error, since all but one of our estimators are unbiased).
-This allows precise analytic comparison to the classical MinHash estimator.
-In our experiments we focus on a more ``downstream'' measure: recall@10.
-
+% TODO: Rasmus: ``Synes at introen er god. Kunne måske være mere eksplicit om hvad det er du måler. Er plads fx i antal bits eller antal elementer? Hvorfor netop varians?''
+Technically, the most difficult part is in the precise variance analysis of the maximum likelihood estimator.
+Variance is an important measure, since it corresponds to the mean squared error when estimating similarity for pairs of sets.
+A factor two loss in variance would need to be countered by doubling the number of independent MinHash values, significantly reducing practical performance.
+% In our analysis we focus on minimizing variance (or squared error, since all but one of our estimators are unbiased).
+One may ask other questions, such as the necessary $K$ to obtain confidence bounds,
+but since we work with independent values, this is mostly trivial.
+An important ``downstream'' measure is the recall on real datasets.
+This determines how large a $K$ is needed in order to return the true nearest neighbour when scanning a database with estimated similarities.
+The exact value depends heavily on the ``difficulty'' of the dataset, and varies between 20 and more than 500 for a 90\% recall in our experiments.
+In every case our new method is able to obtain a significantly higher recall when given the same information as is available to the classical MinHash estimator.
 

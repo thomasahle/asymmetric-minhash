@@ -14,8 +14,10 @@
    By computing the similarity between a set and a MinHash sketch directly, rather than first also sketching the query, we increase precision and improve recall.
 
    We take a principled approach based on maximum likelihood (MLE) with strong theoretical guarantees.
-   Experimental results show this reduces the number of MinHash values needed by 20-30\% for equivalent recall.
-   Finally we suggest a third estimator which is as fast as the classical MinHash estimator while nearly as precise as the MLE.
+   Experimental results show
+   %our improved estimators correspond to a $11-28\%$ increase in MinHash values.
+   we can reduce the number of MinHash values by 10-30\% for a given recall.% depending on the dataset.
+   Finally we suggest a third very simple estimator, which is as fast as the classical MinHash estimator while often more precise than the MLE.
 
 
    %and derive a fast practical algorithm with 

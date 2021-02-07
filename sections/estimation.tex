@@ -2,17 +2,7 @@
 
 \section{The Estimators}
 
-TODO: Remove this.
-Notation:
-\begin{itemize}
-   \item $M$ is the number of Minner values.
-   \item $R$ is the hash value (rank).
-   \item $C$ is number of contained values.
-\end{itemize}
-
-\hspace{1em}
-
-In this section we develop a Maximum Likelihood Estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
+In this section we develop a maximum likelihood estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
 Such an estimator has the lower possible variance asymptotically as $K\to\infty$, but it is slow to evaluate, which destroys the gains from needing fewer MinHash values.
 We thus proceed to develop a third estimator that is as fast as the classical estimator.
 We call it the Minner estimator and we show experimentally that it requires nearly as few MinHash values as the MLE for equivalent recall.
@@ -24,7 +14,7 @@ If $P$ is a proposition, we use $[P]$ to indicate the variable that is $1$ if $P
 \subsection{Maximum Likelihood Estimator}
 
 Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model on the basis of the observation.
-A Maximum Likelihood Estimator chooses the parameters that maximizes the probability that the model generates the particular observed value.
+A maximum likelihood estimator chooses the parameters that maximizes the probability that the model generates the particular observed value.
 That is, if the observation is equal to $\rho$ with probability $p(\rho;\,\theta)$, $\theta$ is unknown, once we observe $\rho$, we estimate $\theta$ as the $\argmax p(\rho;\,\theta)$.
 
 % A statistical model for a MLE contains four types of variables:
@@ -99,8 +89,8 @@ If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the
    \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
 \]
 It is trivial to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one has the highest log-likelihood.
-\begin{definition}[Maximum Likelihood Estimator]
-   The Maximum Likelihood estimators for respectively set overlap and Jaccard similarity are
+\begin{definition}[Maximum Likelihood Estimator (MLE)]
+   The maximum likelihood estimators for respectively set overlap and Jaccard similarity are
    \begin{align}
       T_v(r_1,\dots,r_K) &= \argmax_{v\in[\min\{n_x,n_y\}+1]} \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
       \\T_j(r_1,\dots,r_K) &= \frac{T_v(r_1,\dots,r_K)}{n_x+n_y - T_v(r_1,\dots,r_K)}.
@@ -111,7 +101,7 @@ The definition gives our first estimator.
 
 \subsection{Analysis}
 
-We want to analyze the MLE estimator in the model where $h$ is unknown.
+We want to analyse the MLE estimator in the model where $h$ is unknown.
 In this setting we know that the variance of the classical MinHash estimator is
 \[
    \frac{E[(T-j)^2]}{K}
@@ -136,7 +126,7 @@ The main work of this section will be proving the following proportion:
 
 \begin{figure}
 \includegraphics[trim=30 0 0 0,clip,width=\linewidth]{figures/mle_variance2}
-\caption{Variance of Maximum Likelihood Estimator based on Fischer Information bound.
+\caption{Variance of maximum likelihood estimator based on Fischer Information bound.
 For $j$ close to 0 or 1 the worst case MLE bound is asymptotically equal to the Classical bound, whereas for $j\approx 0.21$ has only $\approx 62\%$ of the variance.
 See \cref{fig:exp_variance} for a corresponding experimental test.
 }
@@ -174,7 +164,7 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    \end{align}
    where $H(p)=p \log \frac{1}{p} + (1-p)\log \frac{1}{1-p}$ is entropy function.
 
-   Standard results~\cite{panchenko2016lec3} on Maximum Likelihood estimators say that
+   Standard results~\cite{panchenko2016lec3} on maximum likelihood estimators say that
    the variance converges to $1/I(v)$ where
    \[
       I(v) = E\left[-\frac{d^2}{dv^2}\ell(m;v)\right]
@@ -198,23 +188,25 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    We can now evaluate the first two derivatives:
    {
       \thinmuskip=0mu
-   \begin{align}
-      % Single diff
-      \frac{d}{dv}\ell(m;v)&=
-      \log\left(\frac{(1-\frac1{y-v+1})^{[y^*\not\in X]}(1-\frac{k}{x-v+1})}{(1-\frac 1{v+1})^{[y^*\in X]}(1-\frac{m-k}{u-x-y+v+1})}\right) + O(1/u)
-      \label{eq:deriv1}
-      \\
-      % Double diff
-      \frac{d^2}{dv^2}\ell(m;v)&=
-       [y^*\not\in X](\tfrac1{y-v+1}-\tfrac1{y-v})
-      + (\tfrac1{x-v+1}-\tfrac1{x-v-k+1})
-                               \\&
-                               +[y^*\in X](\tfrac1{v+1}-\tfrac1{v})
-      + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1}) \\&+ O(1/u^2)
-      \label{eq:deriv2}
-      .
-   \end{align}
-   \vspace{-1em}
+      \begin{align}
+         % Single diff
+         \frac{d}{dv}\ell(m;v)
+         &=
+         \log\left(\frac{(1-\frac1{y-v+1})^{[y^*\not\in X]}(1-\frac{k}{x-v+1})}{(1-\frac 1{v+1})^{[y^*\in X]}(1-\frac{m-k}{u-x-y+v+1})}\right) + O(1/u)
+         \label{eq:deriv1}
+         \\
+         % Double diff
+         \frac{d^2}{dv^2}\ell(m;v)
+        &=
+          [y^*\not\in X](\tfrac1{y-v+1}-\tfrac1{y-v})
+         + (\tfrac1{x-v+1}-\tfrac1{x-v-k+1})
+      \\&+[y^*\in X](\tfrac1{v+1}-\tfrac1{v})
+         + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1})
+      \\&+ O(1/u^2)
+         \label{eq:deriv2}
+         .
+      \end{align}
+      \vspace{-1em}
    }
 
    We now have three terms to bound:
@@ -243,7 +235,7 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    \footnote{In particular at $y=1$ it equals $H_{n_x-v+1}/(n_x-v+1)$, where $H_n$ is the harmonic number.}
 
    We can similar note that $r-m$ is the number of values in the complement of $X\cup Y$, and so has binomial distribution $B(u-n_x-n_y+v, p)$.
-   By the same argument as above, we get that
+   By the same arguments as above, we get that
    \[
       E\left[\tfrac1{u-n_x-n_y-v-(r-m)+1}\right]
       = \tfrac1{n_y-1}\left(\tfrac{n_y}{u-n_x-n_y+v+1} - \tfrac1{\binom{u-n_x-n_y+v}{y}}\right).
@@ -265,10 +257,10 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    % theta = psi^{-1}(eta)
    % v = j^{-1}(j)
    % I(j) = I(v)
-   By the previously stated facts on Maximum Likelihood estimators, this proves the proposition.
+   By the previously stated facts on maximum likelihood estimators, this proves the proposition.
 \end{proof}
 
-We have succeeded in analysing the variance of the Maximum Likelihood estimator.
+We have succeeded in analysing the variance of the maximum likelihood estimator.
 There are more questions to ask, such as how large $K$ must be to start seeing convergence to the stated bound.
 We give some experimental evidence for these questions in \cref{sec:estimation}.
 
@@ -282,7 +274,7 @@ We give some experimental evidence for these questions in \cref{sec:estimation}.
    \label{fig:exp_variance}
 \end{figure}
 
-In the previous sections we derived and analysed a Jaccard similarity estimator based on Maximum Likelihood.
+In the previous sections we derived and analysed a Jaccard similarity estimator based on maximum likelihood.
 The estimator has to evaluate the log-likelihood function, $\ell$, for all $v\in[\min\{n_x,n_y\}+1]$, which means it takes time at least $\Omega(K\min\{n_x,n_y\})$ per database point.
 
 In this section we investigate numerical methods for speeding up the MLE and suggests a new, very fast, estimator we call the Minner Estimator, which can be computed as fast as the classical MinHash estimator.
