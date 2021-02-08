@@ -15,7 +15,6 @@ At the same time, because the compression and increases data locality, it has be
 MinHash sketches are randomized quantizations of sets (or equivalently $0/1$ vectors).
 The idea is to pick $K$ random functions $h_i : U \to [0,1]$ and define the sketch of $X\subseteq U$ to be
 \[q(x) = (\argmin_{x\in X}h_1(x), \dots, \argmin_{x\in X}h_K(x)).\]
-% TODO: references
 After early uses in statistics~\cite{brewer1972selecting} and correlation estimation~\cite{flajolet1985probabilistic}, the term was coined by Broder~\cite{broder1997resemblance, broder1997syntactic} in the context of detecting near-duplicate web pages.
 The sketch is known to be near-optimal~\cite{pagh2014min} for estimating set similarity on a given space budget.
 
@@ -71,9 +70,8 @@ In this paper, we take a principled approach to this problem.
 While our focus is mainly on applications characterized as ``one-many'', such as search, many applications characterized as ``many-many'' are trivially reduced to $n$ times one-many.
 We thus also obtain better performance for important tasks such as duplicate detection and nearest neighbour graph construction.
 
-% TODO: Go over this one more time
 A non-goal of the paper is to make the fastest possible implementation of set similarity search.
-For this reason, we don't include experiments measuring the runtime of our estimators.
+For this reason, we do not include experiments measuring the runtime of our estimators.
 To be competitive in raw running time requires a serious engineering task with papers like~\cite{guo2020accelerating} including 33,812 lines of optimized C and assembly code by many authors.
 In \cref{sec:alg} we discuss hardware-level optimizations of this kind.
 

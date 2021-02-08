@@ -3,7 +3,6 @@
 \section{The Estimators}
 
 In this section, we develop a maximum likelihood estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
-% TODO: What can I really say about "lowest possible variance?"
 Such an estimator has the lowest possible variance asymptotically as $K\to\infty$, but can be slow to evaluate.
 We thus proceed to develop a third estimator that is as fast as the classical estimator while experimentally nearly on par with the MLE in variance.
 Using numerical methods we finally show how to get the full power of the MLE in time linear in the number of MinHash values.
@@ -152,7 +151,6 @@ We want to analyse the MLE in the model where $h$ is unknown.
 \]
 The expectation and variance thus depend only on the similarity and not on the specifics of $X$ and $Y$.
 %This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
-%TODO: We should talk about bias before variance.
 
 The main work of this section will be proving the following proportion:
 \begin{proposition}\label{prop:mle_var}
@@ -208,8 +206,7 @@ We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
                - (n_x+1) H(\tfrac{v}{n_x+1})
               \\&+(u-r-[r\not\in\X]-n_x+m+1) H(\tfrac{n_y-v-[r\not\in\X]}{u-r-[r\not\in\X]-n_x+m+1})
               \\& -(u-n_x+1) H(\tfrac{n_y-v}{u-n_x+1})
-   + O(\log u),
-   % TODO: We should probably also have error terms for n_y-v, n_x-v and so on.
+   + O(\log u), % We should probably also have error terms for n_y-v, n_x-v and so on?
    \end{align}
    where $H(p)=p \log \frac{1}{p} + (1-p)\log \frac{1}{1-p}$ is entropy function.
 
@@ -278,7 +275,8 @@ We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
       E_m\left[\tfrac1{n_x-v-m+1}\right]
       &= E_{h^*}\left[\tfrac{1-p^{n_x-v+1}}{(1-p)(n_x-v+1)}\right]
     \\&= \tfrac1{n_y-1}\left(\tfrac{n_y}{n_x-v+1} - \tfrac1{\binom{n_x+n_y-v}{n_y}}\right),
-    % TODO: Does something weird happen if v=n_x or v=n_y?
+    % Does something weird happen if v=n_x or v=n_y?
+    % It seems not.
    \end{align}
    where the second equality follows by an integral over the Beta function.
    Note that the expectation is defined for all $n_y\ge 0$ by limits.%

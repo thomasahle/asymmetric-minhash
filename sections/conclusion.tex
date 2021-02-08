@@ -1,5 +1,10 @@
 %! TEX root = ../aminhash.tex
 
+% Discuss results
+% Explain conflicting results, unexpected findings and discrepancies with other research
+% State limitations of the study
+% State importance of findings
+
 \section{Conclusion}
 
 We have shown that it is possible to substantially improve upon the traditional MinHash estimator in the database or one-way communication setting.
@@ -13,13 +18,6 @@ While our first estimator had a running time of $\Omega(K \min\{|X|,|Y|\})$, can
 The success of our Minner estimator also suggests that the count of ``hash values smaller than the minimum'' could be used more widely.
 Perhaps as part of the input supplied to Machine Learning pipelines working with coordinated sampling.
 
-%TODO:
-% Discuss results
-% Explain conflicting results, unexpected findings and discrepancies with other research
-   %- Uhm..
-% State limitations of the study
-% State importance of findings
-
 While our estimator only takes time $O(k)$ per data point, they do however still need to do at least two table lookups per value, where the classical estimator just needs to do a single equality comparison.
 In \cref{sec:alg} we discussed how the table lookups could be done using fast SIMD instructions, as is done in the Product Quantization world, which presumably would close the remaining gap.
 %Ideally our algorithm runtime should be dominated by loading data from memory into cache/registers.
@@ -30,9 +28,9 @@ Besides the SIMD considerations in \cref{sec:alg}, there are a number of potenti
 \begin{enumerate}
    \item Weighted MinHash~\cite{ioffe2010improved} And ``Probability MinHash''~\cite{moulton2018maximally} are common extensions of MinHash to non-binary data.
       As with classical MinHash all known estimators follow the symmetric paradigm, so could potentially see similar improvements to what we have shown in this paper.
-   \item Bottom-$k$ MinHash has often been shown to give better estimates than the $K$ independent hash functions MinHash we have studied.
-      Bottom-$k$ also has the benefit of faster hashing, which would translate to faster index generation time in the database setting.
-      The approach has nice combinatorial properties that might also lead to fast estimators.
+%   \item Bottom-$k$ MinHash has often been shown to give better estimates than the $K$ independent hash functions MinHash we have studied.
+%      Bottom-$k$ also has the benefit of faster hashing, which would translate to faster index generation time in the database setting.
+%      The approach has nice combinatorial properties that might also lead to fast estimators.
    \item Is the Minner Estimator consistent? In \cref{sec:minner} we gave results that indicate Minner may not be unbiased.
       However, experimentally it appears to converge to the right value as $K\to\infty$.
    \item Use a Bayesian prior for $Y$.
@@ -53,11 +51,11 @@ Besides the SIMD considerations in \cref{sec:alg}, there are a number of potenti
    \centering
    \includegraphics[trim=0 5 35 40,clip,width=\linewidth]{figures/hist2}
 \caption{The density of estimation errors on Netflix dataset at $K=31$ over a million pairs.
-   The empiric means are $0.0114$ for the symmetric estimator, 
-$0.0002$ for the Minner estimator, and 
-$0.0038$ for the Maximum likelihood estimator.
+%The empiric means are $0.0114$ for the symmetric estimator, 
+%$0.0002$ for the Minner estimator, and 
+%$0.0038$ for the Maximum likelihood estimator.
 Besides a slightly better variation, the maximum likelihood estimator has a much better chance of getting a ``perfect'' estimate.
-The top of the plot has however been cut off so one can see the bottom more clearly.
+%The top of the plot has however been cut off so one can see the bottom more clearly.
 }
 \end{figure}
 

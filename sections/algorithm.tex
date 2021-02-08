@@ -51,7 +51,7 @@ If the range of $h$ is small, say under a million, we can precompute tables.
 For large ranges, we can use that the $H_j$'s are sorted and binary search, which works for both tasks.
 In practice, if $|Y|$ is not too much bigger than $|X|$, a linear scan of $H_j$, will yield the right position in constant time.
 One can also use one of a plethora of fast prefix sum data structures, which are particularly simple since the values of $H_j$ are uniformly random.
-% TODO: Mention that thing about makeing |X| buckets and precomputing the prefix sums?
+% Such as makeing |X| buckets and precomputing the prefix sums
 
 Ideally, we would like each value $D_{i,j}$ to take up just 4 bits.
 If so, one can use the ``shuffle'' SIMD instruction to perform 16 or more table lookups in a single instruction.
