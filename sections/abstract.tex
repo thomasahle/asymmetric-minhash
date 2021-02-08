@@ -8,16 +8,20 @@
 
 \begin{abstract}
    Quantization is the state of the art approach to efficiently storing and searching large high-dimensional datasets.
-   Broder'97~\cite{broder1997resemblance} introduced the idea of Minwise Hashing (MinHash) for quantizing or sketching large sets or binary strings into a small number of values, and provided a way to reconstruct the overlap or Jaccard Similarity between two sets sketched this way.
+   Broder'97~\cite{broder1997resemblance} introduced the idea of Minwise Hashing (MinHash) for quantizing or sketching large sets or binary strings into a small number of values and provided a way to reconstruct the overlap or Jaccard Similarity between two sets sketched this way.
 
    In this paper, we propose a new estimator for MinHash in the case where the database is quantized, but the query is not.
    By computing the similarity between a set and a MinHash sketch directly, rather than first also sketching the query, we increase precision and improve recall.
 
    We take a principled approach based on maximum likelihood (MLE) with strong theoretical guarantees.
    Experimental results show
+   an improved recall@10 corresponding to 10-30\% extra MinHash values.
    %our improved estimators correspond to a $11-28\%$ increase in MinHash values.
-   we can reduce the number of MinHash values by 10-30\% for a given recall.% depending on the dataset.
-   Finally we suggest a third very simple estimator, which is as fast as the classical MinHash estimator while often more precise than the MLE.
+   %we can reduce the required number of MinHash values by 10-30\% for a given recall.
+   % depending on the dataset.
+   Finally, we suggest a third very simple estimator, which is as fast as the classical MinHash estimator while often more precise than the MLE.
+
+   Our methods concern only the query side of search and can be used with any existing MinHashed database without changes to the data.
 
 
    %and derive a fast practical algorithm with 

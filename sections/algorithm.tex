@@ -1,6 +1,6 @@
 %! TEX root = ../aminhash.tex
 
-\section{Implementation Details}
+\section{Implementation Details}\label{sec:alg}
 
 While the algorithm is simple conceptually, there are a few tricks to making it run as fast as the classical MinHash sketch.\footnote{We don't strive to be faster than the classical estimator for a fixed $K$, but for a given recall we can be faster, since our $K$ can be smaller.}
 
@@ -24,7 +24,7 @@ While the algorithm is simple conceptually, there are a few tricks to making it 
          \State $y \gets |Y_i|$
          \Comment{Assuming the set sizes are stored}
          \State $v \gets \min\{\frac{C|X|}{C+M},\frac{Cy}{K}\}$
-         \Comment{Minner Estimator}
+         \Comment{Minner estimator}
          \For{$i=1$ to Newtons}
             \Comment{Optional refinement}
             \State $\nu \gets \frac{R/u + C/(v+1) - (K-C)/(y-v+1) - M/(|X|-v+1)}
@@ -52,3 +52,11 @@ For large ranges, we can use that the $H_j$'s are sorted and binary search, whic
 In practice, if $|Y|$ is not too much bigger than $|X|$, a linear scan of $H_j$, will yield the right position in constant time.
 One can also use one of a plethora of fast prefix sum data structures, which are particularly simple since the values of $H_j$ are uniformly random.
 % TODO: Mention that thing about makeing |X| buckets and precomputing the prefix sums?
+
+Ideally we would like each value $D_{i,j}$ to take up just 4 bits.
+If so, one can use the ``shuffle'' SIMD instruction to perform 16 or more table lookups in a single instruction.
+This method, common in Product Quantization implementations~\cite{andre2019quicker}, has the potential to make our estimators as fast as the classical one, even per MinHash value, since the shuffle table fits in registers.
+
+The reduction to 4 bits is possible because the ranks are heavily concentrated around $n_y/u$, and so have much lower entropy than the direct $\log_2 u$.
+Using rounding to an exponential set of values, like $\{1, 2, 4, \dots\}$ corresponds to storing just the length of the rank, and provides a good approximation.
+Another approach is the $b$-bit Minwise Hashing~\cite{li2010b} technique, which stores only the last $b$ bits of the rank.

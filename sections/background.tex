@@ -26,7 +26,7 @@ However for the simple task of estimating similarities in the many-one setting, 
 
 % TODO: Rasmus: Jeg tror også du bør sammenligne med bottom-k. Mikkels resultater om subset sum virker relevante, https://arxiv.org/abs/1303.5479
 
-\begin{table}
+\begin{figure}
 \centering
  \begin{tabular}{|r|r| r r r r r|} 
  \hline
@@ -45,7 +45,7 @@ However for the simple task of estimating similarities in the many-one setting, 
     This allows more efficient compression of the MinHash values.
  }
  \label{tab:minhash-example}
-\end{table}
+\end{figure}
 
 
 
@@ -59,7 +59,7 @@ Recently Guo et al.~\cite{guo2020accelerating} broke all records~\cite{aumuller2
 The secret to these amazing results is the use of Single instruction, multiple data (SIMD) instructions on modern CPUs, which can consume large batches of quantized data per instruction.
 
 In comparison the landscape for Set Similarity Search is less developed.
-Recent theoretical work~\cite{christiani2017set, DBLP:conf/focs/AhleK20} has discovered the optimal randomized space partitions to use and replaced MinHash after 20 years in the lime light.
+Recent theoretical work~\cite{christiani2017set, DBLP:conf/focs/AhleK20} has discovered the optimal randomized space partitions to use and replaced MinHash after 20 years as the best known approach.
 However the state of the art implementations~\cite{christiani2018scalable} still use MinHash sketching for faster similarity estimation among points in the space region.
 In contrast to the Euclidean case, they have thus far had to the classical symmetric estimator.
 
@@ -71,9 +71,11 @@ In contrast to the Euclidean case, they have thus far had to the classical symme
 There are a number of other sketches for estimating set similarity that we do not study in this paper.
 In general any sketch that allows cardinality estimation and taking the union of two sketches can be used to estimate the set overlap and similarity.
 Most estimators for these sketches are of the symmetric type, so it would be interesting to study whether some of them have good asymmetric estimators as well.
-Of particular interest we mention HyperLogLog~\cite{flajolet2007hyperloglog}, HyperMinHash~\cite{yu2020hyperminhash}, MaxLogHash~\cite{wang2019memory}, SetSketch~\cite{DBLP:journals/corr/abs-2101-00314} and $b$-Bit MinHash~\cite{li2010b}.
 
-Even ``Classical'' MinHash as studied in this paper has variations, such as bottom-$k$ MinHash and $k$-partition MinHash. Cohen~\cite{DBLP:reference/algo/Cohen16b} gives a nice survey of those as well as many more variations and applications.
+HyperLogLog~\cite{flajolet2007hyperloglog}, HyperMinHash~\cite{yu2020hyperminhash}, MaxLogHash~\cite{wang2019memory}, SetSketch~\cite{DBLP:journals/corr/abs-2101-00314} and $b$-Bit MinHash~\cite{li2010b} focus on compressing coordinated samples, however they don't try to get extra information \emph{per sample} as we do in this paper.
+
+MinHash itself has variations, such as bottom-$k$ MinHash and $k$-partition MinHash.
+Cohen~\cite{DBLP:reference/algo/Cohen16b} gives a nice survey of those as well as many more variations and applications.
 Thorup~\cite{thorup2013bottom} analyses bottom-$k$ in a setting superficially similar to ours: For two sets $Y\subseteq X$ and $S$ a bottom-$k$ sketch of $X$, he bounds the deviation of $|S\cap Y$ from its expectation.
 That is, he compares a sketched set with an unsketched set.
 However, since $Y$ is a subset of $X$ it turns out, that for bottom-$k$ the intersection $S\cap Y$ is exactly the same as $S\cap S(Y)$, so he is still in the classical ``symmetric'' setting.

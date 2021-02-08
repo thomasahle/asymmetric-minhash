@@ -3,15 +3,54 @@
 \section{The Estimators}
 
 In this section we develop a maximum likelihood estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
-Such an estimator has the lower possible variance asymptotically as $K\to\infty$, but it is slow to evaluate, which destroys the gains from needing fewer MinHash values.
-We thus proceed to develop a third estimator that is as fast as the classical estimator.
-We call it the Minner estimator and we show experimentally that it requires nearly as few MinHash values as the MLE for equivalent recall.
-In fact, for $K < 50$ it requires fewer values than even the MLE.
+% TODO: What can I really say about "lowest possible variance?"
+Such an estimator has the lowest possible variance asymptotically as $K\to\infty$, but can be slow to evaluate.
+We thus proceed to develop a third estimator that is as fast as the classical estimator while experimentally nearly on par with the MLE in variance.
+Using numerical methods we finally show how to get the full power of the MLE in time linear in the number of MinHash values.
+% requires nearly as few MinHash values as the MLE for equivalent recall.
+%In fact, for $K < 50$ it requires fewer values than even the MLE.
 
 A quick note on notation: If $u\in\mathbb N$, we use $[u]=\{0,\dots,u-1\}$ to indicate the set of numbers up to $u$.
 If $P$ is a proposition, we use $[P]$ to indicate the variable that is $1$ if $P$ and $0$ if not $P$.
 
-\subsection{Maximum Likelihood Estimator}
+\subsection{Maximum Likelihood Estimator}\label{sec:mle}
+
+\begin{figure}
+   \centering
+   \includegraphics[trim=30 5 30 35,clip,width=\linewidth]{figures/scatter}
+   \caption{
+      Estimated vs. True Jaccard similarity on a random query in the Netflix dataset with 5,000 pairs, using $K=31$.
+      The classical estimator can only take $K+1$ different values which leads to some visual banding.
+      Our new estimators are more free and overall more concentrated around the diagonal.
+   }
+   \label{fig:scatter}
+\end{figure}
+
+In the classical analysis of MinHash (and consistent hashing)
+we imagine two sets $X,Y\subseteq[u]$ being given,
+and then compute the probability that a random hash function $h:[u]\to[0,1]$ will pick its smallest value in the intersection $X\cap Y$.
+This turns out to depend only on the size of $X\cap Y$, and so it doesn't matter that we don't actually know the sets $X$ and $Y$ while making the estimates.
+
+To improve upon the classical estimator we have to use the fact that we in fact know $h$ at the time of making the estimate.
+However if we just take $h$ as a given in the analysis, there won't be anything random left, and the analysis will end up depending on the values of $Y$.
+In case of maximum likelihood estimation the analysis is closely tied to the actual algorithm, so depending on $Y$, which we don't know, is not a good idea.
+
+Our compromise is to assume the values of $h$ on $X$ are known, but not the values of $h$ outside of $X$.
+This results in an analysis (and an estimator) that uses the information given to the algorithm about $X$, but doesn't use any information about $Y$, just as in the original analysis.
+Note that this model of analysis is only used for deriving the MLE.
+When, in \cref{sec:analysis}, we analyse the variance, we will assume $h$ is all unknown and get an expression only in terms of $|X|$, $|Y|$ and $|X\cap Y|$.
+
+We discuss one final model.
+Recall that we can equivalently assume $h:[u]\to[u]$.
+We call the output of this $h$ the ``rank'', since it describes the placement of the hash value in the order of hash values of $[u]$.
+Let $\X=\{h(x) : x\in X\}$ and $\Y=\{h(y):y\in Y\}$.
+Then knowing $h$ on $X$ corresponds to knowing $\X$, but sampling $\Y$ uniformly at random.
+This is a useful model combinatorially, since it completely removes $h$ from the analysis.
+\footnote{
+   It also suggests a future Bayesian estimator in which $Y$ is not assumed to be uniformly distributed, but follow some prior distribution, such as the ``skewed data'' model of~\cite{mccauley2018set}.
+}
+
+\smallskip
 
 Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model on the basis of the observation.
 A maximum likelihood estimator chooses the parameters that maximizes the probability that the model generates the particular observed value.
@@ -23,72 +62,71 @@ That is, if the observation is equal to $\rho$ with probability $p(\rho;\,\theta
 % those that are random and hidden;
 % and those we want to estimate.
 
-In our case we get the following model:
-Given a set $X$, a hash function $h:U\to [0,1]$, and values $n_y$ and $v$, we sample a set $Y\subseteq U$ with $|Y|=n_y$ and $v=|X\cap Y|$.
-We let $r$ be the smallest value $h(y)$ for $y\in Y$.
+In our case we get the following model discussed above:
+Given a set $\X$ of size $n_x$ and values $n_y$ and $v$, we sample a set $\Y$ with $|\Y|=n_y$ and $v=|\X\cap \Y|$.
+We let $r$ be some MinHash value the estimator may observe.
 The log-likelihood of the observation is then:
 \[
-   \ell(r; v) = \log\Pr_{Y}[\min_{y\in Y}h(y) = r].
+   \ell(r; v) = \log\Pr_{\Y}[\min\Y = r],
 \]
-We note a couple of things about the model:
-1) By assuming $Y$ is generated uniformly at random among sets of size $n_y$ and overlap $v$ we are making a specific choice that may not be optimal for all datasets.
-In the ``skewed data'' model of~\cite{mccauley2018set} a Bayesian might incorporate a particular presumption about the sets $Y$ and increase the precision of the estimator.
-2) We can get the same model by taking $Y$ to be known, but the hash values $h(y)$ to be unknown.
-This is more similar to the classical MinHash analysis, but doesn't make a big difference in our case, except by making it harder to be a Bayesian.
-3) If we do not consider $n_y$ to be known, we can let the model have two parameters and estimate both of them.
-We could for example count the frequency of set sizes in the database and build this into the model, however in the database model we might as well just store the set sizes and use them directly.
+in other words, the probability that a set $\Y$ sampled with overlap $v$ with $\X$ had this particular value as its smallest.
 
-As a first step to computing $\ell(r;v)$ we not that $h$ can be assumed to take values in $[u]$ rather than $[0,1]$ and a be a bijection.
-However then $h$ simply represents a known permutation of $[u]$ and we can ignore it all together.
-Then the observed MinHash value is the random variable $R=\min_{y\in Y} y$.
-We define $n_x = |X|$, and $M = \sum_{x\in X} [x < R]$ to be the number of ``minner values'' -- a random variable which is a function of $R$.
-We proceed to prove the following proposition:
+We note that if we do not consider $n_y$ to be known, we can let the model have two parameters (rather than just $v$) and estimate both of them.
+This could be done in a Bayesian way by for example counting the frequency of set sizes in the database and build this into the model.
+However in the database model not much space is saved, since the set size is only one value out of $K$.
+
+%As a first step to computing $\ell(r;v)$ we not that $h$ can be assumed to take values in $[u]$ rather than $[0,1]$ and a be a bijection.
+%However then $h$ simply represents a known permutation of $[u]$ and we can ignore it all together.
+We define $n_x = |\X|$ and the observed rank $R=\min \Y$.
+We also define $m=m(r)=\sum_{x\in \X}[x < r]$ to be the number of values in $\X$ smaller than $r$.
+%With this notation we state the following proposition:
 \begin{proposition}
-   Let $r\in[u]$ be the MinHash of $Y$ and let $y^*$ (also $\in[i]$) be its index such that $h(y^*)=r$.
-   Let $m=m(r)=\sum_{x\in X}[x < r]$ then
+   %Let $r\in[u]$ be the MinHash of $Y$ and let $y^*$ (also $\in[i]$) be its index such that $h(y^*)=r$.
 \[
    \Pr_Y[R=r]
     =
     \begin{cases}
       \frac{\binom{n_x-m-1}{v-1}\binom{u-r-(n_x-m)}{n_y-v}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
       &
-      \text{if $y^*\in X$, and}
+      \text{if $r\in \X$}
        \\
       \frac{\binom{n_x-m}{v}\binom{u-r-1-(n_x-m)}{n_y-v-1}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}
-      & \text{if $y^*\not\in X$}
+      & \text{if $r\not\in \X$}
     \end{cases}
  \]
  \label{prop:prob}
-\vspace{-1em} %Some weird spacing going on here.
 \end{proposition}
+%
 Note we take $\binom{n}{k}=0$ for $n<k$.
 In particular this may happen if $n_x-m<v$.
-The probability of $R=r$ in this case is 0, since $n_x-m$ is the number of x-ranks at least $r$, and all of $X\cap Y$ must have rank at least $r$.
+The probability of $R=r$ in this case is 0, since $n_x-m$ is the number of x-ranks at least $r$, and all of $\X\cap \Y$ must have rank at least $r$.
 \begin{proof}
-   Not considering $R$ there are $\binom{n_x}{v}\binom{u-n_x}{n_y-v}$ ways to choose $Y$ such that $|Y|=n_y$ and $|X\cap Y|=v$.
+   Not considering $R$ there are $\binom{n_x}{v}\binom{u-n_x}{n_y-v}$ ways to choose $\Y$ such that $|\Y|=n_y$ and $|\X\cap \Y|=v$.
    We proceed by cases..
 
-   First consider the case $r\in X$.
-   Then the remaining $v-1$ overlapping elements have to be chosen from $\{x\in X:x > r\}$.
+   First consider the case $r\in \X$.
+   Then the remaining $v-1$ overlapping elements have to be chosen from $\{x\in \X:x > r\}$.
    by definition of $m$ there are $n_x-m-1$ such values.
    The remaining $n_y-v$ non-overlapping elements have to be chosen from $\{x\not\in X: x > r \}$.
-   There are $u-r$ elements in $[u]$ greater than $r$, and of those $n_x-m$ are in $X$.
-   Thus the number of ways to choose $Y$ with $r\in X$ is
+   There are $u-r$ elements in $[u]$ greater than $r$, and of those $n_x-m$ are in $\X$.
+   Thus the number of ways to choose $\Y$ with $r\in \X$ is
    $\binom{n_x-m-1}{v-1}\binom{u-r-(n_x-m)}{n_y-v}$.
 
-   The case $r\not\in X$ follows by similar arguments.
+   The case $r\not\in \X$ follows by similar arguments.
 \end{proof}
 
 Using \cref{prop:prob} we can write the log-likelihood in the following concise manner:
 \[
-   \ell(r; v) = \log \frac{\binom{n_x-m-[r\in X]}{v-[r\in X]}\binom{u-r-[r\not\in X]-(n_x-m)}{n_y-v-[r\not\in X]}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}.
+   \ell(r; v) = \log \frac{\binom{n_x-m-[r\in \X]}{v-[r\in \X]}\binom{u-r-[r\not\in \X]-(n_x-m)}{n_y-v-[r\not\in \X]}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}.
    \label{eq:log-likelihood}
 \]
 If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the MinHash functions, a log likelihood of
 \[
    \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
 \]
-It is trivial to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one has the highest log-likelihood.
+It is trivial (if not efficient) to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one has the highest log-likelihood.
+
+We finally define our estimators for intersection ($T_v$) and Jaccard similarity ($T_j$).
 \begin{definition}[Maximum Likelihood Estimator (MLE)]
    The maximum likelihood estimators for respectively set overlap and Jaccard similarity are
    \begin{align}
@@ -97,22 +135,24 @@ It is trivial to enumerate all $v\in[\min\{n_x,n_y\}+1]$ and compute which one h
    \end{align}
 \end{definition}
 %
-The definition gives our first estimator.
+The re-parametrizing the estimator to Jaccard follows from the two quantities being monotone in each other.
+Hence if $T_v$ maximizes the likelihood of $v$, $T_j$ will maximize the likelihood of the Jaccard similarity.
 
-\subsection{Analysis}
+\subsection{Analysis}\label{sec:analysis}
 
 We want to analyse the MLE estimator in the model where $h$ is unknown.
-In this setting we know that the variance of the classical MinHash estimator is
+   In this setting we have for the MinHash estimator $E[T]=\frac1K\sum_i\Pr[q_i(X)=q_i(Y)] = j$ and
 \[
+   V[T] =
    \frac{E[(T-j)^2]}{K}
       = \frac{E[T^2] - j^2}{K}
       = \frac{\Pr[T=1] - j^2}{K}
       = \frac{j(1-j)}{K}.
       \label{eq:minvar}
 \]
-This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
-
-TODO: We should talk about bias before variance.
+The expectation and variance thus depends only on the similarity and not on the specifics of $X$ and $Y$.
+%This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
+%TODO: We should talk about bias before variance.
 
 The main work of this section will be proving the following proportion:
 \begin{proposition}\label{prop:mle_var}
@@ -135,18 +175,27 @@ See \cref{fig:exp_variance} for a corresponding experimental test.
 
 The bound is a little complicated by the fact that it includes the sizes of the sets $n_x$ and $n_y$.
 We note that the bound is convex in the ratio $n_y/n_x$, giving lower variances than \cref{eq:minvar} for $n_x<\!<n_y$ or $n_x >\!> n_y$.
-\Cref{fig:mle_variance} shows \cref{eq:mle_var} when the ratio is taken to be \emph{worst possible}, as well as when it is taken to be 1
+\Cref{fig:mle_variance} shows \cref{eq:mle_var} when the ratio is taken to be \emph{worst possible} as a function of $j$, as well as when it is taken to be 1.
 In the symmetric case $n_x=n_y$ the asymptotic variance reduces to
 \[
-   \frac{j(1-j)}{K}\frac{(1+j)^3}{2(1+3j)}.
+   \frac{j(1-j)}{K}\frac{(1+j)^3}{2(1+3j)},
 \]
+which is easy to compare with \cref{eq:minvar} since $\frac{(1+j)^3}{2(1+3j)} \in [\frac12,1]$ for all $j\in[0,1]$.
 %for large $x$ and $y$.
-For $n_x/n_y\neq1$ the Jaccard similarity is bounded above by $\frac{\min\{n_x,n_y\}}{\max\{n_x,n_y\}}$, which allows the MLE to discard those higher values from consideration.
-Another interesting point from \cref{eq:mle_var} is that the variance at $n_x=c n_y$ is exactly $1/c$ of the variance at $n_x=n_y/c$.
+For $n_x/n_y\neq1$ the Jaccard similarity is bounded above by $\frac{\min\{n_x,n_y\}}{\max\{n_x,n_y\}}$ which the MLE exploits and discards those higher values from consideration, resulting in 0 variance in that range.
+%Another interesting point from \cref{eq:mle_var} is that the variance at $n_x=c n_y$ is exactly $1/c$ of the variance at $n_x=n_y/c$.
+For small $j$ \cref{eq:mle_var} is $\frac{n_y j}{n_x+n_y}-O(j^2)$ compared with $j-O(j^2)$ for \cref{eq:minvar}.
 It makes sense that the variance is lower when $|X|$ is big compared to $|Y|$, since we are given $X$, but don't know $Y$.
 
-TODO: Stuff about local/global risk.
-We can also compute the global risk of the MLE estimator, which is $0.178847/K$, $28.5\%$ less than the Classical Estimator.
+The global risk of an estimator is defined as the worst possible variance over the parameter space.
+In the case of the classical MinHash estimator the global risk is $1/(4K)$ at $j=1/2$.
+We can also compute the global risk of the MLE estimator, which is $0.1788/K$, $28.5\%$ less than the classical estimator.
+
+\smallskip
+
+Recall the model of the analysis is the same as for classical MinHash:
+Given $X$ and $Y$ we sample a random hash function $h:[u]\to[u]$.
+We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
 
 \begin{proof}[Proof of \cref{prop:mle_var}]
    We first find the variance for the MLE estimator for $v$ and then show how to re-parametrize it to use the Jaccard similarity.
@@ -155,10 +204,10 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    we rewrite the log-likelihood \cref{eq:log-likelihood} as
    \begin{align}
       \ell(r;v) &=
-      (x-k-[y^*\in X]+1)H(\tfrac{v-[y^*\in X]}{x-k-[y^*\in X]+1})
-               - (x+1) H(\tfrac{v}{x+1})
-              \\&+(u-m-[y^*\not\in X]-x+k+1) H(\tfrac{y-v-[y^*\not\in X]}{u-m-[y^*\not\in X]-x+k+1})
-              \\& -(u-x+1) H(\tfrac{y-v}{u-x+1})
+      (n_x-m-[r\in\X]+1)H(\tfrac{v-[r\in\X]}{n_x-m-[r\in\X]+1})
+               - (n_x+1) H(\tfrac{v}{n_x+1})
+              \\&+(u-r-[r\not\in\X]-n_x+m+1) H(\tfrac{n_y-v-[r\not\in\X]}{u-r-[r\not\in\X]-n_x+m+1})
+              \\& -(u-n_x+1) H(\tfrac{n_y-v}{u-n_x+1})
    + O(\log u),
    % TODO: We should probably also have error terms for n_y-v, n_x-v and so on.
    \end{align}
@@ -167,16 +216,16 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    Standard results~\cite{panchenko2016lec3} on maximum likelihood estimators say that
    the variance converges to $1/I(v)$ where
    \[
-      I(v) = E\left[-\frac{d^2}{dv^2}\ell(m;v)\right]
+      I(v) = E\left[-\frac{d^2}{dv^2}\ell(r; v)\right]
    \]
    is known as the Fischer information.
-   \footnote{This is actually a bit more tricky than it seems, since
+   \footnote{This is a bit more tricky than it seems, since
       the standard proof of this fact~\cite{panchenko2016lec3} uses that the expectation is taken over the same probability space as $\ell$ is defined.
       However one can check that the key step in which that is used is to show
       $E[f''/f] = \int (f''(x)/f(x))f(x)dx = \int f''(dx) = (\int f(x)dx)'' = 0$, where $f=\exp(\ell)$ is the probability distribution.
       Since $E_h[f''/f] = E_h[E_{h_{|\overline X}}f''/f] = E_h[0]= 0$
       we can run the entire proof using $E_h$ rather than $E_{h_{|\overline X}}$ and get the same result.
-      Thus it suffices to thus focus on bounding $E_h[-\frac{d^2}{dv^2}\ell(m;v)]$.
+      Thus it suffices to thus focus on bounding $E_h[-\frac{d^2}{dv^2}\ell(r;v)]$.
    % Something, something sigma algerba.
       % Basically I'm arguing that we can run the whole proof of MLE asymptotics and consider very expectatation as over $E_h$ rather than $E_{h_{|X}}$
    }
@@ -184,24 +233,24 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    % Strictly speaking the Fischer information is only defined when the log-likelihood is differentiable in the parameter $j$, which is not the case here, since we know $\frac{j}{1+j}(x+y)$ is an integer.
    %Since Stirling's approximation also applies to derivatives (simply exchanging the sum and the derivative operator)
 
-   TODO: Update notation
+
    We can now evaluate the first two derivatives:
    {
       \thinmuskip=0mu
       \begin{align}
          % Single diff
-         \frac{d}{dv}\ell(m;v)
+         \frac{d}{dv}\ell(r;v)
          &=
-         \log\left(\frac{(1-\frac1{y-v+1})^{[y^*\not\in X]}(1-\frac{k}{x-v+1})}{(1-\frac 1{v+1})^{[y^*\in X]}(1-\frac{m-k}{u-x-y+v+1})}\right) + O(1/u)
+         \log\left(\frac{(1-\frac1{n_y-v+1})^{[r\not\in\X]}(1-\frac{m}{n_x-v+1})}{(1-\frac 1{v+1})^{[r\in\X]}(1-\frac{r-m}{u-n_x-n_y+v+1})}\right) + O(1/u)
          \label{eq:deriv1}
          \\
          % Double diff
-         \frac{d^2}{dv^2}\ell(m;v)
+         \frac{d^2}{dv^2}\ell(r;v)
         &=
-          [y^*\not\in X](\tfrac1{y-v+1}-\tfrac1{y-v})
-         + (\tfrac1{x-v+1}-\tfrac1{x-v-k+1})
-      \\&+[y^*\in X](\tfrac1{v+1}-\tfrac1{v})
-         + (\tfrac1{u-x-y+v+1}-\tfrac1{u-x-y+v-m+k+1})
+          [r\not\in\X](\tfrac1{n_y-v+1}-\tfrac1{n_y-v})
+         + (\tfrac1{n_x-v+1}-\tfrac1{n_x-v-m+1})
+      \\&+[r\in\X](\tfrac1{v+1}-\tfrac1{v})
+         + (\tfrac1{u-n_x-n_y+v+1}-\tfrac1{u-n_x-n_y+v-r+m+1})
       \\&+ O(1/u^2)
          \label{eq:deriv2}
          .
@@ -210,17 +259,18 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
    }
 
    We now have three terms to bound:
-   $E[y^* \in X]$, $\tfrac1{x-v-k+1}$ and $\tfrac1{u-x-y+v-m+k+1}$.
-   Since any element of $Y$ has even chance of becoming the smallest, we have 
-   \[E[y^*\in X] = \Pr[y^*\in X] = \frac{v}{n_y}. \]
+   $E[r\in\X]$, $\tfrac1{n_x-v-m+1}$ and $\tfrac1{u-n_x-n_y+v-r+m+1}$.
+   Since any element of $Y$ has even chance of becoming the smallest under $h$, we have
+   \[E[r\in\X] = \Pr[r\in\X] = \frac{v}{n_y}. \]
 
-   When considering the rank, $r$, and the minner count, $m$, we'll assume the values of $h$ have exponential distribution.
+   When considering the distribution of $r$ and $m$, we will assume the values of $h$ have exponential distribution, $Exp(1)$, instead of uniform over $[0,1]$.
    This corresponds to using $\log1/h(x)$ instead of $h(x)$ which is a strictly monotone transformation and so equivalent in terms of comparing hash values.
-   Let $h^* = h(y^*)$ (different from $r$ which is the rank.)
-   Then $h^* = \min_{z\in y}h(z) \sim \text{Exp}(y)$ by stability of minimums of exponentially distributed random variables.
+   Let $y^* = \argmin_{y\in Y}h(y)$ and $h^* = h(y^*)$.
+   (Note this is different from $r$, which is the rank.)
+   We then have that Then $h^* \sim \text{Exp}(y)$ by stability of minimums of exponentially distributed random variables.
 
    We can now see $m=\sum_{x\in X\setminus Y} [h(x) < h^*]$ as having binomial distribution $B(n_x-v, p)$, conditioning on $h^*$, where $p=\Pr[h(x)\le h^*] = 1-\exp(-h^*)$ by the CDF for the exponential distribution.
-   We only sum over $X\setminus Y$ rather than all of $X$ since no value in $X\cap Y$ can be smaller than $h^*$ by definition.
+   (We only sum over $X\setminus Y$ rather than all of $X$ since no value in $X\cap Y$ can be smaller than $h^*$ by definition.)
    Because of the binomial revision
    $\frac1{n-i+1}\binom{n}{i} = \frac1{n+1}\binom{n+1}{i}$
    we can evaluate
@@ -230,7 +280,7 @@ We can also compute the global risk of the MLE estimator, which is $0.178847/K$,
     \\&= \tfrac1{n_y-1}\left(\tfrac{n_y}{n_x-v+1} - \tfrac1{\binom{n_x+n_y-v}{n_y}}\right),
     % TODO: Does something weird happen if v=n_x or v=n_y?
    \end{align}
-   where the second equality follows by properties of the exponential distribution.
+   where the second equality follows by an integral over the Beta function.
    Note that the expectation is defined for all $n_y\ge 0$ by limits.%
    \footnote{In particular at $y=1$ it equals $H_{n_x-v+1}/(n_x-v+1)$, where $H_n$ is the harmonic number.}
 
@@ -264,7 +314,7 @@ We have succeeded in analysing the variance of the maximum likelihood estimator.
 There are more questions to ask, such as how large $K$ must be to start seeing convergence to the stated bound.
 We give some experimental evidence for these questions in \cref{sec:estimation}.
 
-\subsection{Minner Estimator}
+\subsection{Minner Estimator}\label{sec:minner}
 
 \begin{figure}
    \includegraphics[trim=10 0 45 40,clip,width=\linewidth]{figures/synvar_100000.png}
@@ -276,8 +326,12 @@ We give some experimental evidence for these questions in \cref{sec:estimation}.
 
 In the previous sections we derived and analysed a Jaccard similarity estimator based on maximum likelihood.
 The estimator has to evaluate the log-likelihood function, $\ell$, for all $v\in[\min\{n_x,n_y\}+1]$, which means it takes time at least $\Omega(K\min\{n_x,n_y\})$ per database point.
+In this section we investigate numerical methods for speeding up the MLE and suggests a new, fast estimator which can be computed as fast as the classical MinHash estimator.
 
-In this section we investigate numerical methods for speeding up the MLE and suggests a new, very fast, estimator we call the Minner Estimator, which can be computed as fast as the classical MinHash estimator.
+We call this the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a value smaller than the minimum hash value of $Y$.
+The expected number of such values is $(|X\setminus Y|)/(|Y|+1)$, since each element of $X\setminus Y$ has a probability $1/(|Y|+1)$ of being smaller than all in $Y$, and the values in $X\cap Y$ can't by definition be.
+If $M$ is the Minner count, then $|X| - M(|Y|+1)$ is an unbiased estimator for the intersection size $v=|X\cap Y|$.
+However we will derive a much better estimator based on considerations about the MLE from the previous section.
 
 The starting point of this derivation is the continuous derivative log-likelihood \cref{eq:deriv1},
 which we would like to solve $=0$ for $v$.
@@ -327,7 +381,7 @@ The resulting value is clearly always in the acceptable range $[0,\min\{n_x, n_y
 To estimate Jaccard we take $T_j(r) = v/(n_x + n_y - v)$.
 As before we can compute $C$ and $M$ in $O(K)$ time per database point, and now we have replaced the finalization of finding the roots of a polynomial with a simple division.
 
-\hspace{.2em}
+\smallskip
 
 While $E[\frac{C n_y}{K}] = v$ is nice and unbiased (for estimating $v$), the combined estimator is not necessary so.
 Using the arguments from the previous analysis section, we find that for a single observation,\footnote{We were not able to analyse the case where $C$ and $M$ are the sum of multiple $c_i$ and $m_i$ values, nor the effect of combining the two estimators using the minimum.}
@@ -339,13 +393,17 @@ Using the arguments from the previous analysis section, we find that for a singl
  \label{eq:minner_mean}
 \end{align}
 where $H_n$ is the $n$th Harmonic Number.
-If we let $n_x=n_y=n\to \infty$ we get $\eqref{eq:minner_mean} = \frac{2j}{1-j}\log\frac{2}{1+j}$, a quantity sandwiched between the Jaccard similarity, $j$, and the Sørensen–Dice coefficient, $\frac{2j}{1+j}$.
+If we let $n_x=n_y=n\to \infty$ we get
+\[\eqref{eq:minner_mean} = \frac{2j}{1-j}\log\frac{2}{1+j},\]
+a quantity sandwiched between the Jaccard similarity, $j$, and the Sørensen–Dice coefficient, $\frac{2j}{1+j}$.
 While not unbiased, this is at least monotone in $j$ (respectively $v$).
 
-Experimentally, the actual Minner Estimator seems to converge to $j$ for larger $K$, at least for the smaller $j$ seen in practice. See~\cref{fig:var}.
-For larger Jaccard similarities it slightly underestimate them, just as we see on the variance get worse as $j\to1$ in~\cref{fig:exp_variance}.
+Experimentally, the actual Minner estimator seems to converge to $j$ for larger $K$ and $j$ not too large.
+That is, the estimator which uses the sums $C$ and $M$, rather than taking the mean of $\frac{c_i n_x}{c_i+m_i}$, and which makes the minimum with $Cn_y/K$.
+%See~\cref{fig:var}.
+For larger Jaccard similarities Minner seems to slightly underestimate Jaccard, just as we see on the variance get worse as $j\to1$ in~\cref{fig:exp_variance}.
 
-\hspace{.2em}
+\smallskip
 
 We finally present a numerical way to combine the speed of the Minner Estimator with the consistency of the MLE.
 The idea is a common one in MLE design, which is to apply Newton's method to the problem of solving $\frac{d}{dv}\ell(r;v)=0$.%
