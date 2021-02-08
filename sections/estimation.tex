@@ -2,7 +2,7 @@
 
 \section{The Estimators}
 
-In this section we develop a maximum likelihood estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
+In this section, we develop a maximum likelihood estimator (MLE) for MinHash, analyse the variance and compare it to the classical MinHash estimator.
 % TODO: What can I really say about "lowest possible variance?"
 Such an estimator has the lowest possible variance asymptotically as $K\to\infty$, but can be slow to evaluate.
 We thus proceed to develop a third estimator that is as fast as the classical estimator while experimentally nearly on par with the MLE in variance.
@@ -21,7 +21,7 @@ If $P$ is a proposition, we use $[P]$ to indicate the variable that is $1$ if $P
    \caption{
       Estimated vs. True Jaccard similarity on a random query in the Netflix dataset with 5,000 pairs, using $K=31$.
       The classical estimator can only take $K+1$ different values which leads to some visual banding.
-      Our new estimators are more free and overall more concentrated around the diagonal.
+      Our new estimators are freer and overall more concentrated around the diagonal.
    }
    \label{fig:scatter}
 \end{figure}
@@ -32,7 +32,7 @@ and then compute the probability that a random hash function $h:[u]\to[0,1]$ wil
 This turns out to depend only on the size of $X\cap Y$, and so it doesn't matter that we don't actually know the sets $X$ and $Y$ while making the estimates.
 
 To improve upon the classical estimator we have to use the fact that we in fact know $h$ at the time of making the estimate.
-However if we just take $h$ as a given in the analysis, there won't be anything random left, and the analysis will end up depending on the values of $Y$.
+However, if we just take $h$ as a given in the analysis, there won't be anything random left, and the analysis will end up depending on the values of $Y$.
 In case of maximum likelihood estimation the analysis is closely tied to the actual algorithm, so depending on $Y$, which we don't know, is not a good idea.
 
 Our compromise is to assume the values of $h$ on $X$ are known, but not the values of $h$ outside of $X$.
@@ -45,15 +45,15 @@ Recall that we can equivalently assume $h:[u]\to[u]$.
 We call the output of this $h$ the ``rank'', since it describes the placement of the hash value in the order of hash values of $[u]$.
 Let $\X=\{h(x) : x\in X\}$ and $\Y=\{h(y):y\in Y\}$.
 Then knowing $h$ on $X$ corresponds to knowing $\X$, but sampling $\Y$ uniformly at random.
-This is a useful model combinatorially, since it completely removes $h$ from the analysis.
+This is a useful model combinatorially since it completely removes $h$ from the analysis.
 \footnote{
    It also suggests a future Bayesian estimator in which $Y$ is not assumed to be uniformly distributed, but follow some prior distribution, such as the ``skewed data'' model of~\cite{mccauley2018set}.
 }
 
 \smallskip
 
-Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model on the basis of the observation.
-A maximum likelihood estimator chooses the parameters that maximizes the probability that the model generates the particular observed value.
+Given a random variable and a statistical model, ``estimation'' is the task of inferring the parameters to the model based on the observation.
+A maximum likelihood estimator chooses the parameters that maximize the probability that the model generates the particular observed value.
 That is, if the observation is equal to $\rho$ with probability $p(\rho;\,\theta)$, $\theta$ is unknown, once we observe $\rho$, we estimate $\theta$ as the $\argmax p(\rho;\,\theta)$.
 
 % A statistical model for a MLE contains four types of variables:
@@ -73,7 +73,7 @@ in other words, the probability that a set $\Y$ sampled with overlap $v$ with $\
 
 We note that if we do not consider $n_y$ to be known, we can let the model have two parameters (rather than just $v$) and estimate both of them.
 This could be done in a Bayesian way by for example counting the frequency of set sizes in the database and build this into the model.
-However in the database model not much space is saved, since the set size is only one value out of $K$.
+However, in the database model, not much space is saved, since the set size is only one value out of $K$.
 
 %As a first step to computing $\ell(r;v)$ we not that $h$ can be assumed to take values in $[u]$ rather than $[0,1]$ and a be a bijection.
 %However then $h$ simply represents a known permutation of $[u]$ and we can ignore it all together.
@@ -98,13 +98,13 @@ We also define $m=m(r)=\sum_{x\in \X}[x < r]$ to be the number of values in $\X$
 \end{proposition}
 %
 Note we take $\binom{n}{k}=0$ for $n<k$.
-In particular this may happen if $n_x-m<v$.
+In particular, this may happen if $n_x-m<v$.
 The probability of $R=r$ in this case is 0, since $n_x-m$ is the number of x-ranks at least $r$, and all of $\X\cap \Y$ must have rank at least $r$.
 \begin{proof}
    Not considering $R$ there are $\binom{n_x}{v}\binom{u-n_x}{n_y-v}$ ways to choose $\Y$ such that $|\Y|=n_y$ and $|\X\cap \Y|=v$.
    We proceed by cases..
 
-   First consider the case $r\in \X$.
+   First, consider the case $r\in \X$.
    Then the remaining $v-1$ overlapping elements have to be chosen from $\{x\in \X:x > r\}$.
    by definition of $m$ there are $n_x-m-1$ such values.
    The remaining $n_y-v$ non-overlapping elements have to be chosen from $\{x\not\in X: x > r \}$.
@@ -120,7 +120,7 @@ Using \cref{prop:prob} we can write the log-likelihood in the following concise 
    \ell(r; v) = \log \frac{\binom{n_x-m-[r\in \X]}{v-[r\in \X]}\binom{u-r-[r\not\in \X]-(n_x-m)}{n_y-v-[r\not\in \X]}}{\binom{n_x}{v}\binom{u-n_x}{n_y-v}}.
    \label{eq:log-likelihood}
 \]
-If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the MinHash functions, a log likelihood of
+If we observe $K>1$ values $r_1, r_2, \dots, r_K$ we get, by independence of the MinHash functions, a log-likelihood of
 \[
    \ell(r_1; v) + \ell(r_2; v) + \dots + \ell(r_K; v).
 \]
@@ -140,8 +140,8 @@ Hence if $T_v$ maximizes the likelihood of $v$, $T_j$ will maximize the likeliho
 
 \subsection{Analysis}\label{sec:analysis}
 
-We want to analyse the MLE estimator in the model where $h$ is unknown.
-   In this setting we have for the MinHash estimator $E[T]=\frac1K\sum_i\Pr[q_i(X)=q_i(Y)] = j$ and
+We want to analyse the MLE in the model where $h$ is unknown.
+   In this setting, we have for the MinHash estimator $E[T]=\frac1K\sum_i\Pr[q_i(X)=q_i(Y)] = j$ and
 \[
    V[T] =
    \frac{E[(T-j)^2]}{K}
@@ -150,13 +150,13 @@ We want to analyse the MLE estimator in the model where $h$ is unknown.
       = \frac{j(1-j)}{K}.
       \label{eq:minvar}
 \]
-The expectation and variance thus depends only on the similarity and not on the specifics of $X$ and $Y$.
+The expectation and variance thus depend only on the similarity and not on the specifics of $X$ and $Y$.
 %This is important because we want to know the general expected performance of the algorithm, and not what it does after some particular random event.
 %TODO: We should talk about bias before variance.
 
 The main work of this section will be proving the following proportion:
 \begin{proposition}\label{prop:mle_var}
-   As $K\to\infty$, the variance of the MLE estimator converges to
+   As $K\to\infty$, the variance of the MLE converges to
    \[
       \frac{j (1+j)^3 n_y (n_y-j n_x) (n_x-j n_y)}{(n_x+n_y) \left((1+j)^2 n_xn_y - j^2 (n_x+n_y)^2\right)K}
    \label{eq:mle_var}
@@ -188,8 +188,8 @@ For small $j$ \cref{eq:mle_var} is $\frac{n_y j}{n_x+n_y}-O(j^2)$ compared with 
 It makes sense that the variance is lower when $|X|$ is big compared to $|Y|$, since we are given $X$, but don't know $Y$.
 
 The global risk of an estimator is defined as the worst possible variance over the parameter space.
-In the case of the classical MinHash estimator the global risk is $1/(4K)$ at $j=1/2$.
-We can also compute the global risk of the MLE estimator, which is $0.1788/K$, $28.5\%$ less than the classical estimator.
+In the case of the classical MinHash estimator, the global risk is $1/(4K)$ at $j=1/2$.
+We can also compute the global risk of the MLE, which is $0.1788/K$, $28.5\%$ less than the classical estimator.
 
 \smallskip
 
@@ -198,7 +198,7 @@ Given $X$ and $Y$ we sample a random hash function $h:[u]\to[u]$.
 We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
 
 \begin{proof}[Proof of \cref{prop:mle_var}]
-   We first find the variance for the MLE estimator for $v$ and then show how to re-parametrize it to use the Jaccard similarity.
+   We first find the variance for the MLE for $v$ and then show how to re-parametrize it to use the Jaccard similarity.
 
    Using Stirling's approximation $ \log n! = n\log n - n + O(\log n)$,
    we rewrite the log-likelihood \cref{eq:log-likelihood} as
@@ -221,7 +221,7 @@ We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
    is known as the Fischer information.
    \footnote{This is a bit more tricky than it seems, since
       the standard proof of this fact~\cite{panchenko2016lec3} uses that the expectation is taken over the same probability space as $\ell$ is defined.
-      However one can check that the key step in which that is used is to show
+      However, one can check that the key step in which that is used is to show
       $E[f''/f] = \int (f''(x)/f(x))f(x)dx = \int f''(dx) = (\int f(x)dx)'' = 0$, where $f=\exp(\ell)$ is the probability distribution.
       Since $E_h[f''/f] = E_h[E_{h_{|\overline X}}f''/f] = E_h[0]= 0$
       we can run the entire proof using $E_h$ rather than $E_{h_{|\overline X}}$ and get the same result.
@@ -267,7 +267,7 @@ We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
    This corresponds to using $\log1/h(x)$ instead of $h(x)$ which is a strictly monotone transformation and so equivalent in terms of comparing hash values.
    Let $y^* = \argmin_{y\in Y}h(y)$ and $h^* = h(y^*)$.
    (Note this is different from $r$, which is the rank.)
-   We then have that Then $h^* \sim \text{Exp}(y)$ by stability of minimums of exponentially distributed random variables.
+   We then have that Then $h^* \sim \text{Exp}(y)$ by the stability of minimums of exponentially distributed random variables.
 
    We can now see $m=\sum_{x\in X\setminus Y} [h(x) < h^*]$ as having binomial distribution $B(n_x-v, p)$, conditioning on $h^*$, where $p=\Pr[h(x)\le h^*] = 1-\exp(-h^*)$ by the CDF for the exponential distribution.
    (We only sum over $X\setminus Y$ rather than all of $X$ since no value in $X\cap Y$ can be smaller than $h^*$ by definition.)
@@ -284,7 +284,7 @@ We compute $r=\min_{y\in Y}h(y)$ and $m=\sum_{x\in X}[h(x)<r]$.
    Note that the expectation is defined for all $n_y\ge 0$ by limits.%
    \footnote{In particular at $y=1$ it equals $H_{n_x-v+1}/(n_x-v+1)$, where $H_n$ is the harmonic number.}
 
-   We can similar note that $r-m$ is the number of values in the complement of $X\cup Y$, and so has binomial distribution $B(u-n_x-n_y+v, p)$.
+   We can similarly note that $r-m$ is the number of values in the complement of $X\cup Y$, and so has binomial distribution $B(u-n_x-n_y+v, p)$.
    By the same arguments as above, we get that
    \[
       E\left[\tfrac1{u-n_x-n_y-v-(r-m)+1}\right]
@@ -320,23 +320,23 @@ We give some experimental evidence for these questions in \cref{sec:estimation}.
    \includegraphics[trim=10 0 45 40,clip,width=\linewidth]{figures/synvar_100000.png}
    \caption{Measured variance of estimators, over 100,000 repetitions at $|X|=|Y|=K=30$ and $u=500$.
       The MLE has already almost converged to \cref{fig:mle_variance}.
-      The Minner Estimator is seen to be particular good for low Jaccard similarities, which may be why it works so well on the practical datasets tested in \cref{sec:evaluation} which tend to have similarities concentrated in the $[0,0.2]$ range, as seen in \cref{fig:scatter}.}
+      The Minner Estimator is seen to be particularly good for low Jaccard similarities, which may be why it works so well on the practical datasets tested in \cref{sec:evaluation} which tend to have similarities concentrated in the $[0,0.2]$ range, as seen in \cref{fig:scatter}.}
    \label{fig:exp_variance}
 \end{figure}
 
-In the previous sections we derived and analysed a Jaccard similarity estimator based on maximum likelihood.
+In the previous sections, we derived and analysed a Jaccard similarity estimator based on maximum likelihood.
 The estimator has to evaluate the log-likelihood function, $\ell$, for all $v\in[\min\{n_x,n_y\}+1]$, which means it takes time at least $\Omega(K\min\{n_x,n_y\})$ per database point.
 In this section we investigate numerical methods for speeding up the MLE and suggests a new, fast estimator which can be computed as fast as the classical MinHash estimator.
 
 We call this the ``Minner Estimator'' since it is based on counting the number of elements in $X$ that hash to a value smaller than the minimum hash value of $Y$.
-The expected number of such values is $(|X\setminus Y|)/(|Y|+1)$, since each element of $X\setminus Y$ has a probability $1/(|Y|+1)$ of being smaller than all in $Y$, and the values in $X\cap Y$ can't by definition be.
+The expected number of such values is $(|X\setminus Y|)/(|Y|+1)$ since each element of $X\setminus Y$ has a probability $1/(|Y|+1)$ of being smaller than all in $Y$, and the values in $X\cap Y$ can't by definition be.
 If $M$ is the Minner count, then $|X| - M(|Y|+1)$ is an unbiased estimator for the intersection size $v=|X\cap Y|$.
-However we will derive a much better estimator based on considerations about the MLE from the previous section.
+However, we will derive a much better estimator based on considerations about the MLE from the previous section.
 
 The starting point of this derivation is the continuous derivative log-likelihood \cref{eq:deriv1},
 which we would like to solve $=0$ for $v$.
 If we apply the approximation $\log(1-\eps) \approx -\eps$,
-we we get
+we get
 \[
    \frac{d}{dv}\ell(r;v) \approx
    -\frac{[y^*\not\in X]}{n_y-v} 
@@ -346,7 +346,7 @@ we we get
    %= 0
    .
 \]
-This is a convenient form, since it is linear in the variables, $[y^*\in X]$, $m$ and $r$.
+This is a convenient form since it is linear in the variables, $[y^*\in X]$, $m$ and $r$.
 As we observe multiply $r_i$ values, we can define
 $R = \sum_i r_i$, $M = \sum_i m_i$ and $C = \sum_i [y_i^*\in X]$.
 This gives us a single equation to solve
@@ -366,7 +366,7 @@ The time complexity has thus been decreased from $\Omega(K\min\{n_x,n_y\})$ to $
 However, solving a polynomial for every point in the database is hardly as fast as the classical MinHash estimator.
 
 However, we would like a simpler estimator still.
-In practice $u$ is very large (otherwise it wouldn't be set data), so we'll approximate $\frac{R-M}{u-n_x-n_y+v}\approx 0$.
+In set data, $u$ is normally very large, so we will approximate $\frac{R-M}{u-n_x-n_y+v}\approx 0$.
 If we assume $n_y>\!>v$ we may approximate $\frac{K-C}{n_y-v}\approx 0$ we get the simple solution to \cref{eq:d1_simple}, $v=\frac{C n_x}{C+M}$.
 Alternatively, if $n_x>\!>v$ we approximate $\frac{M}{n_x-v}\approx 0$, we get $v=\frac{C n_y}{K}$.
 We then combine the two approximations into the following estimator:
@@ -377,13 +377,13 @@ We then combine the two approximations into the following estimator:
 \]
 \end{definition}
 
-The resulting value is clearly always in the acceptable range $[0,\min\{n_x, n_y\}]$, since $C\le C+M$ and $C \le K$.
+The resulting value is clearly always in the acceptable range $[0,\min\{n_x, n_y\}]$ since $C\le C+M$ and $C \le K$.
 To estimate Jaccard we take $T_j(r) = v/(n_x + n_y - v)$.
 As before we can compute $C$ and $M$ in $O(K)$ time per database point, and now we have replaced the finalization of finding the roots of a polynomial with a simple division.
 
 \smallskip
 
-While $E[\frac{C n_y}{K}] = v$ is nice and unbiased (for estimating $v$), the combined estimator is not necessary so.
+While $E[\frac{C n_y}{K}] = v$ is nice and unbiased (for estimating $v$), the combined estimator is not necessarily so.
 Using the arguments from the previous analysis section, we find that for a single observation,\footnote{We were not able to analyse the case where $C$ and $M$ are the sum of multiple $c_i$ and $m_i$ values, nor the effect of combining the two estimators using the minimum.}
 \begin{align}
    E[\frac{c n_x}{c+m}]
@@ -405,11 +405,10 @@ For larger Jaccard similarities Minner seems to slightly underestimate Jaccard, 
 
 \smallskip
 
-We finally present a numerical way to combine the speed of the Minner Estimator with the consistency of the MLE.
+We finally present a numerical way to combine the speed of the Minner estimator with the consistency of the MLE.
 The idea is a common one in MLE design, which is to apply Newton's method to the problem of solving $\frac{d}{dv}\ell(r;v)=0$.%
-\footnote{People sometimes use Newton's method with the expected Hessian instead of the actual second derivative~\cite{longford1987fast}, however in our case we'll be able to efficiently compute it exact.}
-To maintain $O(K)$ complexity per database point we apply Newton's method to the approximate derivative equation \cref{eq:d1_simple}.
-This is nice, because the second derivative is still linear in $C$, $R$ and $M$:
+\footnote{People sometimes use Newton's method with the expected Hessian instead of the actual second derivative~\cite{longford1987fast}, however, in our case, we'll be able to efficiently compute it exactly.}
+To maintain $O(K)$ complexity per database point we apply Newton's method to the approximate derivative equation \cref{eq:d1_simple}, which provides the second derivative is still linear in $C$, $R$ and $M$:
 \[
    \sum_i\frac{d^2}{dv^2}\ell(r_i; v) \approx
    \frac{K-C}{(n_y-v)^2} 
@@ -422,6 +421,6 @@ This is nice, because the second derivative is still linear in $C$, $R$ and $M$:
 Newton's method now proceeds with iterations
 $v_{i+1} = v_i - \frac{\ell'(r; v_i)}{\ell''(r; v_i)}$.
 
-This concludes the derivation of the Minner Estimator with Newton refinement.
-In the next section we give pseudo-code matching what was used to perform our experiments on real world data.
+This concludes the derivation of the Minner estimator with Newton refinement.
+In the next section, we give pseudo-code matching what was used to perform our experiments on real-world data.
 

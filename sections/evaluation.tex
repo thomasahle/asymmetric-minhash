@@ -9,12 +9,12 @@ All code is available at~\cite{codes}, implemented in Python with critical parts
 We run our experiments on the Flickr, DBLP and Netflix dataset from a recent set-similarity join survey by Mann et al.~\cite{mann2016empirical}.
 These datasets were also used by \cite{christiani2018scalable} and \cite{ahle2020problem}.
 In the survey these datasets were identified as archetypical examples with and without Zipf-like behaviour.
-Mann et al. writes:
+Mann et al. write:
  ``Most datasets, like FLICKR (cf. Figure 7), show a Zipf-like
  distribution and contain a large number of infrequent tokens (less
  than 10 occurrences), which favors the prefix filter. In contrast,
  NETFLIX has almost no tokens that occur less than 100 times,''
-In practice this means that the Netflix dataset requires a much larger $K$, for reasonable recall, than the Flickr dataset, but we still get substantial improvements in recall on both.
+In practice, this means that the Netflix dataset requires a much larger $K$, for reasonable recall than the Flickr dataset, but we still get substantial improvements in recall on both.
 %The Netflix dataset is originally from \href{https://www.cs.uic.edu/~liub/Netflix-KDD-Cup-2007.html}{KDD-Cup 2007}.
 
 \subsection{Recall vs Memory usage}
@@ -45,22 +45,22 @@ If the searcher wants to obtain the true nearest set, they can use the estimatio
 For optimal speed the engineer wants to trade-off $K$ for the number of candidates that need to be ``rescored'', so recall@30 or 100 may also be interesting.
 We picked 10 for our experiments because of its standard use in benchmarks~\cite{aumuller2017ann}.
 
-For each experiment we shuffled the dataset and split it into 10,000 sets for queries and the remaining for the database.
+For each experiment, we shuffled the dataset and split it into 10,000 sets for queries and the remaining for the database.
 The database was hashed using $K$ independent MinHash functions.
 The shuffling and hash functions use the same randomness across experiments with different datasets.
 % Experimentally we find that we can increase recall@10 by 50\% at small values of $K$.
 %The following shows the effect on recall@10 with 10,000 queries:
-We picked a handful of typical $K$ values and estimated the distances with the classical estimator, the maximum likelihood estimator, and the Minner Estimator with respectively 0, 1 and 8 iterations of Newton's method.
-For Flickr we picked lower $K$ values, since the recall got very high very quickly.
+We picked a handful of typical $K$ values and estimated the distances with the classical estimator, the maximum likelihood estimator, and the Minner estimator with respectively 0, 1 and 8 iterations of Newton's method.
+For Flickr we picked lower $K$ values since the recall got very high very quickly.
 The results are shown in tables \ref{tab:netflix}, \ref{tab:flickr} and \ref{tab:dblp}.
 
-In every experiment the Minner estimator beat the classical estimator, and for larger $K$ the MLE or Minner estimator with Newton iterations was best.
-Using 8 iterations of Newton's method was usually slightly better than running 1, but the difference was minor compared to 0 vs 1 iterations.
+In every experiment, the Minner estimator beat the classical estimator, and for larger $K$ the MLE or Minner estimator with Newton iterations was best.
+Using 8 iterations of Newton's method was usually slightly better than running 1, but the difference was minor compared to 0 vs 1 iteration.
 
 \smallskip
 
 The results are a bit hard to interpret, since a $98\%$ to $99\%$ improvement may be much harder to get than a $40\%$ to $44\%$, even if the later is 4 times bigger in terms of percentage points gained.
-Instead we opt to measure improvement in terms of how many more MinHash values we would have needed with the classical estimator to obtain the recall of our best estimator.
+Instead, we opt to measure improvement in terms of how many more MinHash values we would have needed with the classical estimator to obtain the recall of our best estimator.
 This has the advantage of corresponding directly to space saved.
 
 To measure the improvement in terms of increased $K$ values,
@@ -69,9 +69,9 @@ Thus for recall $r$ we need $K=a\log\frac1{1-r}$ MinHash Values.
 For a given recall $r$ the improvement of model $a_1$ over $a_2$ in terms of $K$ is thus a factor $a_1/a_2$.
 
 We perform regressions (with least squares) based on this model and the data in tables \ref{tab:netflix}, \ref{tab:flickr} and \ref{tab:dblp}.
-For Netflix we get $a_\text{classic}=300.7$ and $a_\text{best} = 233.9$ showing an improvement of $28.5\%$ in terms of $K$ values.
-For Flickr we get $a_\text{classic}=10.73$ and $a_\text{best} = 9.644$, corresponding to an $11.3\%$ improvement,
-and for DBLP we get $a_\text{classic}=204.2$ and $a_\text{best}=168.3$, a $21.4\%$ improvement.
+For Netflix, we get $a_\text{classic}=300.7$ and $a_\text{best} = 233.9$ showing an improvement of $28.5\%$ in terms of $K$ values.
+For Flickr, we get $a_\text{classic}=10.73$ and $a_\text{best} = 9.644$, corresponding to an $11.3\%$ improvement,
+and for DBLP, we get $a_\text{classic}=204.2$ and $a_\text{best}=168.3$, a $21.4\%$ improvement.
 
 Alternative we could have used a normal logistic model $r = 1/(1 + \exp(-K/a))$.
 Fitting our data with this model results in larger improvements of resp. $53.1\%$, $27.5\%$ and $14.5\%$.
@@ -143,7 +143,7 @@ We could fix this by adding a constant term and use $r=1/(1+\exp(b-K/a))$, howev
   500 & 0.7942 & 0.85($\ast$) & 0.8440 & 0.8660 & \textbf{ 0.8667} \\
   \hline
  \end{tabular}
- \caption{The Minner estimator is best at small $K$, but eventually the asymptotics kick in and the Maximum likelihood estimator overtakes. The MLE is very slow however, and one can get most of the benefits by applying a single iteration of Newton's method on top of the Minner Estimator.
+ \caption{The Minner estimator is best at small $K$, but eventually the asymptotics kick in and the Maximum likelihood estimator overtakes. The MLE is very slow however, and one can get most of the benefits by applying a single iteration of Newton's method on top of the Minner estimator.
     For the midrange $K$ values 30 and 100 we get a near 30\% improvement in recall over the classical estimator.
    ($\ast$): MLE results for large $K$ were stopped after 2000 queries and 48 hours.
  }
@@ -165,7 +165,7 @@ We could fix this by adding a constant term and use $r=1/(1+\exp(b-K/a))$, howev
   30 & 0.9108 & 0.9080 & \textbf{ 0.9301} & 0.8597 & 0.8714 \\
   \hline
  \end{tabular}
- \caption{The Flickr dataset is much easier than the Netflix dataset and as such doesn't require as many MinHash values to obtain good recall. The Maximum likelihood estimator never overcomes its asymptotic disadvantage, but the Minner estimator improves 2-7\% in recall over the classic estimator, and all of $51\%$ at $K=1$.}
+ \caption{The Flickr dataset is much easier than the Netflix dataset and as such doesn't require as many MinHash values to obtain a good recall. The Maximum likelihood estimator never overcomes its asymptotic disadvantage, but the Minner estimator improves 2-7\% in recall over the classic estimator, and all of $51\%$ at $K=1$.}
  \label{tab:flickr}
 \end{table}
 
@@ -187,7 +187,7 @@ We could fix this by adding a constant term and use $r=1/(1+\exp(b-K/a))$, howev
   \hline
  \end{tabular}
  \caption{The DBLP dataset appears somewhere in between Netflix and Flickr in terms of difficulty.
-    On DBLP the MLE estimator (or Minner with Newton iterations) generally does better than pure Minner.
+    On DBLP the MLE (or Minner with Newton iterations) generally does better than pure Minner.
    ($\ast$): MLE results for large $K$ were stopped after 2000 queries and 48 hours.
  }
  \label{tab:dblp}
@@ -211,6 +211,6 @@ The other natural experiment to perform is measuring the difference between esti
 \Cref{fig:var} is inspired by~\cite{thorup2013bottom}.
 We sampled 50 random queries from the dataset and estimated the similarity to all other sets.
 For each batch, we subtracted the real similarity and computed mean and percentiles.
-While this is not the main focus of the paper, we note that the results are consistent with the variance computed for the MLE estimator and our experimental variance computations in~\cref{fig:exp_variance}.
+While this is not the main focus of the paper, we note that the results are consistent with the variance computed for the MLE and our experimental variance computations in~\cref{fig:exp_variance}.
 
 The code for every plot is available at~\cite{codes} as well.

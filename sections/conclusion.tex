@@ -6,7 +6,7 @@ We have shown that it is possible to substantially improve upon the traditional 
 Our analysis has shown one can reduce the global risk by nearly 30\%,
 and much more when the size of the sets differ.
 %The fact that our variance is $\frac{n_y}{n_x+n_y}$ of MinHash's variance suggests that our method might be particularly useful for containment queries, in which the 
-Meanwhile our experiments have shown a similar improvement in recall on standard datasets.
+Meanwhile, our experiments have shown a similar improvement in recall on standard datasets.
 
 While our first estimator had a running time of $\Omega(K \min\{|X|,|Y|\})$, can be slow, we derived a faster $O(K)$ time estimator, which has a similar variance and often even an improved recall.
 %The Minner estimator with newton=8 can sometimes give results quite different from MLE, because of the approximation into making it linear.
@@ -20,7 +20,7 @@ Perhaps as part of the input supplied to Machine Learning pipelines working with
 % State limitations of the study
 % State importance of findings
 
-While our estimator only take time $O(k)$ per data point, they do however still need to do at least two table lookups per value, where the classical estimator just needs to do a single equality comparison.
+While our estimator only takes time $O(k)$ per data point, they do however still need to do at least two table lookups per value, where the classical estimator just needs to do a single equality comparison.
 In \cref{sec:alg} we discussed how the table lookups could be done using fast SIMD instructions, as is done in the Product Quantization world, which presumably would close the remaining gap.
 %Ideally our algorithm runtime should be dominated by loading data from memory into cache/registers.
 
@@ -52,7 +52,7 @@ Besides the SIMD considerations in \cref{sec:alg}, there are a number of potenti
    %\hspace{-1em}
    \centering
    \includegraphics[trim=0 5 35 40,clip,width=\linewidth]{figures/hist2}
-\caption{Density of estimation errors on Netflix dataset at $K=31$ over a million pairs.
+\caption{The density of estimation errors on Netflix dataset at $K=31$ over a million pairs.
    The empiric means are $0.0114$ for the symmetric estimator, 
 $0.0002$ for the Minner estimator, and 
 $0.0038$ for the Maximum likelihood estimator.

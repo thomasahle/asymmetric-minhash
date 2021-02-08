@@ -53,7 +53,7 @@ In practice, if $|Y|$ is not too much bigger than $|X|$, a linear scan of $H_j$,
 One can also use one of a plethora of fast prefix sum data structures, which are particularly simple since the values of $H_j$ are uniformly random.
 % TODO: Mention that thing about makeing |X| buckets and precomputing the prefix sums?
 
-Ideally we would like each value $D_{i,j}$ to take up just 4 bits.
+Ideally, we would like each value $D_{i,j}$ to take up just 4 bits.
 If so, one can use the ``shuffle'' SIMD instruction to perform 16 or more table lookups in a single instruction.
 This method, common in Product Quantization implementations~\cite{andre2019quicker}, has the potential to make our estimators as fast as the classical one, even per MinHash value, since the shuffle table fits in registers.
 
