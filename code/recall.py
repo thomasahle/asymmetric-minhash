@@ -10,6 +10,7 @@ parser.add_argument('--data', type=str, default='netflix', choices=datasets.file
 parser.add_argument('-N', type=int, default=None, help='Number of datapoints')
 parser.add_argument('-M', type=int, default=100, help='Number of queries')
 parser.add_argument('-K', type=int, default=30, help='Number of minhashes')
+parser.add_argument('-R', type=int, default=10, help='Recall@R')
 parser.add_argument('--method', type=str, default='fast', help='Whether to use simpler formula')
 parser.add_argument('--newton', type=int, default=0, help='Number of Newton steps in some methods')
 parser.add_argument('--type', type=int, default=10, help='Extra parameter for comb7')
@@ -20,7 +21,7 @@ M, K = args.M, args.K
 # the estimator with the single true nearest neighbour. This makes
 # sense in the setting where we use the sketch distance as a "first pass"
 # through the data.
-R = 10
+R = args.R
 
 if args.method == 'fast':
     args.method = ('fast', args.newton, args.type)

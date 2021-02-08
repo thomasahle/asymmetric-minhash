@@ -4,6 +4,7 @@ import random
 files = dict(
     netflix = '/home/jovt/simfilter/data/ssjoin-data/netflix/netflix-dedup-raw-noone.txt',
     flickr = '/home/jovt/simfilter/data/ssjoin-data/flickr/flickr-dedup-raw-noone.txt',
+    dblp = '/home/jovt/simfilter/data/ssjoin-data/dblp-feb2014/dblp-ss100000-upper-2q-dedup-raw-noone.txt',
 )
 
 

@@ -88,8 +88,9 @@ def main():
         print(ss)
         plt.plot(js, ss, label=label)
     plt.legend()
-    plt.xlabel('Variance')
-    plt.ylabel('Jaccard Simmilarity')
+    plt.xlabel('Jaccard Simmilarity')
+    plt.ylabel('Variance')
+    #plt.ylabel('Mean Squared Error')
 
     plt.show()
     #print('Writing to', args.out)
