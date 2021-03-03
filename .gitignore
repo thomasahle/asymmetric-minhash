@@ -288,3 +288,5 @@ data2/
 *.cpp
 *.png
 *.so
+venv/
+notes/
