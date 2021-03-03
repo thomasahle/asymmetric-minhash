@@ -152,3 +152,74 @@ cpdef void query2(int[:,::1] data, int x, int u, int[::1] ysz, int newtons, int 
         out[i] = v/(x+y-v)
         #out[i] = jac
 
+cpdef void bottomk(int[:,::1] data, int nx, int u, int[::1] nys, int[::1] xh,
+                   int type, float[::1] out) nogil:
+    cdef:
+        int n = data.shape[0]
+        int k = data.shape[1]
+        int i, j, ry, jx, ny, c, s, m
+        double v, ss, mm, kk, uu, cc, nnx, nny, v0
+        int a, b, mid
+        int best_v, vt
+        double best_logp, logp
+        double d1, d2, d3, d4
+
+    for i in range(n):
+        ny = nys[i]
+        jx, c = -1, 0
+        for j in range(k):
+            ry = data[i, j]
+            #while jx+1 < nx and xh[jx+1] <= ry:
+            #    jx += 1
+            a, b = 0, 1
+            while jx+b < nx and xh[jx + b] <= ry:
+                b *= 2
+            while a+1 != b:
+                mid = (a + b) // 2
+                if jx+mid < nx and xh[jx+mid] <= ry:
+                    a = mid
+                else: b = mid
+            jx += a
+
+            if xh[jx] == ry:
+                c += 1
+        s = ry+1 # s the number of 'squares' we can see
+        m = jx+1 # m is the number of x hashes < s
+        if ry == u: # y data is padded with [u]s
+            v = c # If we saw all of y, v is simply c
+        elif type == 0:
+            v = c * (nx + ny)/<double>(m + k)
+        elif type == 1:
+            v = c * min(nx/<double>(m+1), ny/<double>k)
+        elif type == 2:
+            v = c * min(nx/<double>(m+1), ny/<double>k)
+            for _ in range(8):
+                d1, d2, d3, d4 = v, nx-v, ny-v, u-nx-ny+v
+                if d1 > 0 and d2 > 0 and d3 > 0 and d4 > 0:
+                    h = (m-c)/d2 + (k-c)/d3 - (c - k - m + s)/d4 - c/d1
+                    d = (m-c)/d2**2 + (k-c)/d3**2 + (c - k - m + s)/d4**2 + c/d1**2
+                    v -= h/d
+                v = min(max(v, c), c+nx-m, c+ny-k)
+        elif type == 3:
+            if c == 0: v = 0
+            elif c == m: v = nx
+            elif c == k: v = ny
+            elif c == m+k-s: v = nx+ny-u
+            else:
+                v = c * min(nx/<double>(m+1), ny/<double>k)
+                for _ in range(8):
+                    h = c*(c - k - m + s)*(nx - v)*(-ny + v) + (c - k)*(c - m)*v*(-nx - ny + u + v)
+                    d = c*((c - m)*u + s*(nx + ny - 2*v)) - k*(c*u + m*(nx + ny - u - 2*v)) 
+                    if d != 0:
+                        v -= h/d
+                    v = min(max(v, c), c+nx-m, c+ny-k)
+        else:
+            best_v, best_logp = 0, log(0)
+            for vt in range(c, c+min(nx-m,ny-k)+1):
+                logp = ent3(nx-m, vt-c) - ent3(nx, vt)
+                logp += ent3(u-s-(nx-m), ny-vt-(k-c)) - ent3(u-nx, ny-vt)
+                if logp > best_logp:
+                    best_v, best_logp = vt, logp
+            v = best_v
+
+        out[i] = v/<double>(nx + ny - v)

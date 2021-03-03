@@ -1,11 +1,26 @@
 import os.path
-for data in ['netflix', 'flickr', 'dblp']:
-    if data in ('netflix', 'dblp'):
-        ks = [1, 10, 30, 100, 400, 500]
-    else: ks = [1, 5, 10, 20, 30]
-    for k in ks:
+import sys, re
+import collections
+
+data, algs = set(), set()
+ks = collections.defaultdict(set)
+for fn in sys.argv[1:]:
+    dat, k, alg = re.match(r'recall_(.+?)_(\d+)_(.+?)\.out', fn).groups()
+    data.add(dat)
+    ks[dat].add(int(k))
+    algs.add(alg)
+data = sorted(data)
+algs = sorted(algs)
+
+for data in data:
+    print(f'%{data}')
+    for alg in ['K'] + algs:
+        print(alg.rjust(4), end='')
+        if alg == algs[-1]:
+            print(' \\\\')
+        else: print(' & ', end='')
+    for k in sorted(ks[data]):
         print(str(k).rjust(4), end=' & ')
-        algs = ['sym', 'mle', 'fast_n0', 'fast_n1', 'fast_n8']
         vals = []
         for alg in algs:
             fn = f'recall_{data}_{k}_{alg}.out'

@@ -141,9 +141,8 @@ if args.plot_type == 'histogram':
     plt.ylabel('Density')
 
 if args.plot_type == 'variance':
-    # I want a plot where the x-axis is K
-    # Like in Mikkel's article: https://dl.acm.org/doi/pdf/10.1145/2488608.2488655
-    # Maybe with fewer Ks and the mean instead of a single experiment.
+    # Plot inspired by Mikkel's article: https://dl.acm.org/doi/pdf/10.1145/2488608.2488655
+    # With fewer Ks and the mean instead of a single experiment.
 
     labels = ['Classic MinHash', 'Minner Estimator', 'Maximum Likelihood']
     var_ratio = 0
@@ -156,13 +155,6 @@ if args.plot_type == 'variance':
             lows.append(scoreatpercentile(vals, args.percentile))
             means.append(vals.mean())
             highs.append(scoreatpercentile(vals, 100-args.percentile))
-
-        # bads = [k for k in ks if lows[k-1] < -0.05 and k > 20]
-        # print(bads)
-        del ks[29] # FIXME: Remove this
-        del lows[29]
-        del means[29]
-        del highs[29]
             
         ax.fill_between(ks, lows, highs, alpha=.2, color=f'C{i}')
         ax.plot(ks, means, line, label=labels[i], color=f'C{i}', linewidth=2)
@@ -178,7 +170,6 @@ if args.ylim != -1:
 if args.xlim != -1:
     plt.xlim([-args.xlim, args.xlim])
 
-#plt.yscale(args.yscale)
 if args.out is None:
     out_file = f'plot_{args.data}_{N=}_{M=}_{args.K=}_{args.plot_type}.png'
 else: out_file = args.out

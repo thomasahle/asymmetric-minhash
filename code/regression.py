@@ -1,5 +1,6 @@
 import numpy as np
 import sklearn.linear_model
+import matplotlib.pyplot as plt
 import sys
 
 if sys.argv[1] == 'dblp':
@@ -40,3 +41,20 @@ print((1/a1)/(1/a2)-1)
 # It allows this percentage reduction in the number of MinHash values.
 # E.g. going from 100 to 80 is a 20% reduction.
 print(1-(1/a2)/(1/a1))
+
+
+if len(sys.argv) > 2 and sys.argv[2] == 'plot':
+    fig, ax = plt.subplots()
+    plt.scatter(r2s, ks)
+    plt.scatter(r1s, ks)
+    rs = np.linspace(0,1)
+    k1s = np.log(1/(1-rs))/a1
+    k2s = np.log(1/(1-rs))/a2
+    plt.plot(rs, k2s, label='Best Estimator')
+    plt.plot(rs, k1s, label='Classical MinHash')
+    ax.legend(prop={'size': 10})
+    plt.ylabel('# MinHash functions')
+    plt.xlabel('Recall@10')
+    fn = 'out.png'
+    print(f'Saving to {fn}')
+    plt.savefig(fn, dpi=300)

@@ -2,8 +2,9 @@ import numpy as np
 import os.path
 import argparse
 import random
+import collections
 
-from aminhash import datasets, estimate, Hash, jac, tasks
+from aminhash import datasets, estimate, estimate_bottomk, Hash, jac, tasks
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--data', type=str, default='netflix', choices=datasets.files.keys())
@@ -11,6 +12,7 @@ parser.add_argument('-N', type=int, default=None, help='Number of datapoints')
 parser.add_argument('-M', type=int, default=100, help='Number of queries')
 parser.add_argument('-K', type=int, default=30, help='Number of minhashes')
 parser.add_argument('-R', type=int, default=10, help='Recall@R')
+parser.add_argument('--bottomk', action='store_true', help='Use bottom-k instead of k-minhash')
 parser.add_argument('--method', type=str, default='fast', help='Whether to use simpler formula')
 parser.add_argument('--newton', type=int, default=0, help='Number of Newton steps in some methods')
 parser.add_argument('--type', type=int, default=10, help='Extra parameter for comb7')
@@ -37,16 +39,7 @@ print(f'Brute forcing')
 cache_file = f'thresholds_{args.data}_{N}.npy'
 def inner_brute(ys, q):
     x = set(q)
-    # One can potentially do jaccard search faster by using that
-    # j/(1+j) = v/(x+y) is a monotonely increasing function in j.
-    # So taking the largest jaccard is the same as taking the
-    # largest v normalized by x+y.
     js = np.array([jac(x, y) for y in ys])
-    # We store the smallest acceptable similarity, rather than
-    # the acutal indicies, since duplicate similarities would
-    # otherwise lead to wrong reported results.
-    #return -np.sort(np.partition(-js, R)[:R])[-1]
-    # I'm an idiot that doesn't understand recall
     return np.max(js)
 # TODO: This will pickle and copy data to every process. Can we maybe use
 # shared memory instead?
@@ -55,19 +48,37 @@ answers = tasks.run(inner_brute, qs, args=(data,), cache_file=cache_file,
 
 print('Making hash functions')
 random.seed(74)
-hs = [Hash(dom) for _ in range(K)]
+if args.bottomk:
+    hs = [Hash(dom) for _ in range(1)]
+    cnt = collections.Counter()
+    for x in data:
+        for token in x:
+            cnt[token] += 1
+    for x in qs:
+        for token in x:
+            cnt[token] += 1
+    for j, (i, _) in enumerate(reversed(cnt.most_common())):
+        hs[0].perm[i] = j
+else:
+    hs = [Hash(dom) for _ in range(K)]
 
 print('Hashing')
-hash_file = f'hashes_{args.data}_{N}_{K}.npy'
+hash_file = f'hashes_{args.data}_{args.bottomk=}_{N=}_{K=}.npy'
 def inner_hashing(hs, y):
+    if args.bottomk:
+        botk = sorted(hs[0].perm[yi] for yi in y)[:K]
+        # We pad with values outside of the universe.
+        botk += [len(hs[0].perm)]*(K-len(botk))
+        assert len(botk) == K
+        return [len(y)] + botk
     return [len(y)] + [h(y) for h in hs]
 size_db = tasks.run(inner_hashing, data, args=(hs,), cache_file=hash_file,
                     verbose=True, chunksize=10000, report_interval=1000, perc=True)
 db = np.ascontiguousarray(size_db[:, 1:]).astype(np.int32)
 sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
 
-print('Sample hash:')
-print(db[0])
+print('Sample hashes:')
+print(db)
   
 print(f'Computing recall@{R} with method {args.method}, {args.type}')
 
@@ -78,7 +89,10 @@ for i, (q, threshold) in enumerate(zip(qs, answers)):
     print(f'{i}/{len(qs)} r~{total / i if i > 0 else 0}', end='\r', flush=True)
     if i % 400 == 0:
         print()
-    estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
+    if args.bottomk:
+        estimates, t1, t2 = estimate_bottomk(args.method, q, db, sizes, dom, hs[0], estimates)
+    else:
+        estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
     guesses = np.argpartition(-estimates, R)[:R]
     realj = max(jac(set(q), data[g]) for g in guesses) # brute force the guesses
     total += int(realj >= threshold or np.isclose(realj, threshold))

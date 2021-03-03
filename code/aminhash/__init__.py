@@ -61,3 +61,19 @@ def estimate(method, x, ys, ysz, dom, hs, estimates=None):
         t2 = time.time() - start
 
     return estimates, t1, t2
+
+def estimate_bottomk(method, x, ys, ysz, dom, h, estimates=None):
+    N = len(ys)
+
+    if estimates is None:
+        estimates = np.zeros(N, dtype=np.float32)  # Space for storing results
+    start = time.time()
+    xh = np.array(sorted(h.perm[xi] for xi in x), dtype=np.int32)
+    t1 = time.time() - start
+
+    start = time.time()
+    typ = {'mikkel': 0, 'minner': 1, 'newton': 2, 'revdiv': 3, 'mle': 4}[method]
+    minhash.bottomk(ys, len(x), dom, ysz, xh, typ, estimates)
+    t2 = time.time() - start
+
+    return estimates, t1, t2
