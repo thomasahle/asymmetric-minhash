@@ -1,0 +1,180 @@
+\documentclass[11pt]{article}
+\input{../header}
+\usepackage{csquotes}
+
+\begin{document}
+
+Assume $X,Y\subseteq U$ are sampled independently by picking element $i\in [u]$ with probability $p_i$.
+We condition on $|X|=n_x$, $|Y|=n_y$ and $|X\cap Y|=v$,
+e.g. by rejection sampling.
+Now assume the elements of $[u]$ are ordered in some way.
+We write down the first $k$ elements of $Y$ under this ordering.
+Call this subset $Y'$.
+Now the goal is to estimate $v$ given $X$, $Y'$ and $n_y$.
+
+We build a maximum likelihood estimator.
+Let $s$ be the largest value of $Y'$.
+(Note we use 1-indexing $[u]=\{1,\dots,u\}$.)
+Then we may equivalently see $Y' = Y \cap [s]$.
+Define $m=|X\cap[s]$ and $c=|X\cap Y\cap [s]| = |X\cap Y'|$.
+Define $Z_i = [i\in Y]$ and $Z_T = \sum_{i\in T} Z_i$.
+Then
+\[
+   \Pr[Y' | v]
+   = \frac{
+      \Pr[Z_{X\setminus [s]}=v-c]
+      \Pr[Z_{[u]\setminus [s]\setminus X}=n_y-k-(v-c)]
+   }{
+      \Pr[Z_{X}=v]
+      \Pr[Z_{[u]\setminus X}=n_y-v]
+   }
+   .
+\]
+
+To analyze this, define the cumulant generating function
+\[
+   \kappa_T(t)
+   = \log E[\exp(t Z_T)]
+   = \sum_{i\in T} \log[(1-p_i) + p_i \exp(t)]
+   .
+\]
+Then
+\[
+   \log\Pr[Z_{T}=v] \approx \kappa_T(t) - t v,
+   \label{eq:logprob}
+\]
+where $t$ is defined by $\kappa'_T(t) = v$, (recall $\kappa'_T(t) = \sum_{i\in T}\frac{1}{1+\frac{1-p_i}{p_i}e^{-t}}$.)
+This means the log-like function can be written as
+\begin{align}
+   \ell(v) = \log\Pr[Y' | v]
+   &= 
+   \kappa_{X\setminus [s]}(t_1)-t_1(v-c)
+   +\kappa_{[u]\setminus [s]\setminus X}(t_2)-t_2(n_y-k-v+c)
+   \\
+   &-\kappa_{X}(t_3)+t_3v
+   -\kappa_{[u]\setminus X}(t_4)+t_4(n_y-v)
+   ,
+\end{align}
+where $\kappa_{X\setminus [s]}(t_1) = v-c$ and so on.
+It is useful to note that in the setting of \cref{eq:logprob}
+we have $\frac{d}{dv}\kappa_T(t)-tv = \kappa_T'(t)t' - t'v - t = -t$.
+Thus
+\[
+   \frac{d}{dv}\ell(v) = -t_1+t_2+t_3-t_4.
+   \label{eq:d1}
+\]
+An alternative interpretation of the MLE is thus to solve $t_1+t_4=t_2+t_3$ over $v$.
+
+We are interested in the variance of the estimator as a function of $u, n_x, n_y, v$ and the sequence $p_i$.
+In particular we want to know which ordering of the $p_i$ will minimize this variance.
+We thus consider the Fischer information
+\[
+   I(v) = -E[\frac{d^2}{dv^2}\ell(v)].
+\]
+Note that $t=(\kappa_T')^{-1}(v)$ so we can compute $\frac{d}{dv}t = \frac{1}{k_T''((\kappa_T')^{-1}(v))} = \frac{1}{k_T''(t)}$.
+Applying this to \cref{eq:d1} we find
+\[
+   \frac{d^2}{dv^2}\ell(v)
+   =
+   -\frac{1}{\kappa_{X\setminus [s]}''(t_1)}
+   -\frac{1}{\kappa_{[u]\setminus [s] \setminus X}''(t_2)}
+   +\frac{1}{\kappa_{X}''(t_3)}
+   +\frac{1}{\kappa_{[u]\setminus X}''(t_4)}.
+\]
+(Note some of the signs changed due to the sign of $v$ in the defining equations.)
+
+In the case of normally distributed random variables we would assume
+$\kappa_T''(t) = \sigma_T^2 = \sum_{i\in T} p_i(1-p_i)$.
+We might then approximate $E[1/\kappa''_T(t)]$ by $1/E[\sigma_T^2]$.
+Here
+\[
+   E[\sigma_T^2] = \sum_{i\in [u]}p_i(1-p_i)\Pr[i\in T].
+\]
+
+\begin{displayquote}
+
+   Jakob suggests another approach:
+   Let $\kappa_\theta$ be the cumulant generating function for the $\theta$ tilted distribution of $Z$.
+   Then $\kappa_\theta(t) = \kappa(t+\theta) - \kappa(\theta)$ and $\kappa_\theta''(t) = \kappa''(t+\theta)$.
+   Taking $t=0$ we get $\kappa''(\theta) = \kappa_\theta''(0) = \sigma_\theta^2$, which is just the variance of the tilted distribution.
+
+   Note that
+   \begin{align}
+      \Pr[Z=k]e^{tk}/m(t)
+      &= \sum_{|I|=k}\prod_{i\in I}p_i\prod_{i\not\in I}(1-p_i) e^{tk}/\prod_{i\in[n]}m_i(t)
+    \\&= \sum_{|I|=k}\prod_{i\in I}\frac{p_ie^t}{1-p_i+p_i e^t}\prod_{i\not\in I}\frac{1-p_i}{1-p_i+p_ie^t}
+    \\&= \sum_{|I|=k}\prod_{i\in I}\frac{p_ie^t}{1-p_i+p_i e^t}\prod_{i\not\in I}\left(1-\frac{p_i e^t}{1-p_i+p_ie^t}\right).
+   \end{align}
+   In other words, the tilted sum $Z$ is just the sum of individually tilted Bernoulli random variables.
+   Thus
+   \[
+      \kappa''(t)
+      = \kappa''_t(0)
+      = \sigma_t^2
+      = \sum_{i\in T} \frac{p_i(1-p_i)}{(1-p_i+p_i e^t)^2}e^t
+      .
+   \]
+   Actually a much easier approach would be to just note $\kappa(t) = \sum_i \kappa_i(t)$ so $\kappa''(t) = \sum_i \kappa_i''(t)$, which is exactly the above.
+
+\end{displayquote}
+
+Would it be easier to take the expectation of $t$ first and then the second derivative in $v$?
+I think that's allowed...
+The expectation of $t^2$ would also suffice, no subsequent derivatives needed.
+
+This seems hard.
+Let's go back to just
+\[
+   E[\sigma_X^2]
+   = \sum_{i\in[u]}p_i(1-p_i)\Pr[i\in X]
+   = \sum_{i\in[u]}p_i^2(1-p_i).
+\]
+Similarly 
+\[
+   E[\sigma_{X\setminus[s]}^2]
+   = \sum_{i\in[u]}p_i(1-p_i)\Pr[i\in X \wedge i\not\in [s]]
+   = \sum_{i > s}p_i^2(1-p_i)
+\]
+Now to maximize the Fischer Information we want to maximize
+\[
+   \frac1{\sum_{i > s}p_i^2(1-p_i)}
+   - 
+   \frac{1}{\sum_{i\in[u]}p_i^2(1-p_i)}
+   .
+\]
+Note this quantity is clearly non-negative.
+
+Experiments suggest that a reasonable choice may be split sequence like [5, 4, 3, 2, 1, 0, 6, 7, 8, 9].
+That is we start with the middle values and move down, then come back and take the remaining in increasing order.
+
+For probabilities like $[.1, .2, .3, \dots]$ the sorted order appears good,
+where as for parreto probabilities the inverse order may be best.
+Of course, there is something about the mean that's a little odd.
+With parreto the sum will always be < 1?
+
+%Perhaps a reasonable choice is having 
+
+%Idea: Can we at least use that $\kappa''(t)$ seems to be convex in $p$?
+%Can we pick some real values and see which ordering of $p$ improves $k''(t)$ for those?
+%Hm, the problem is that it wouldn't be an average over $s,c,m$ and sampling those also depends on the ordering of $p$.
+
+Ok, so my program now indicates that increasing order is optimal for entropy maximisation.
+That is, let $S\cap Y$ be the observed bottom-$k$ sketch, then
+\[
+   H(S\cap Y) = E_{S,Y} \log\Pr[S\cap Y]
+\]
+is maximized when $p$ is increasing.
+In fact, it doesn't even matter if we include the case where $|Y|$ is smaller than $k$.
+It seems.
+
+In particular we look at the sum
+\[
+   \sum_{s, Y'\subseteq[s], |Y'|=k-1}
+   p_s p^{Y'} (1-p)^{\overline{Y'}}
+   \log\frac{1}{
+      p^{Y'} (1-p)^{\overline{Y'}}
+   }
+\]
+where $p(T)=\prod_{i\in T} p_i \prod_{i\not\in T}(1-p_i)$
+
+\end{document}
