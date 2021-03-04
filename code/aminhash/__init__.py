@@ -118,14 +118,17 @@ def estimate_weighted(ps, x, ys, ysz):
     u = len(ps)
     nx = len(x)
 
+    start = time.time()
     fx = DiscretizedLogistic([ps[i] for i in x], n_clusters=100)
     x_set = set(x)
     fu = DiscretizedLogistic([ps[i] for i in range(u) if i not in x_set], n_clusters=100)
+    t1 = time.time() - start
 
+    start = time.time()
     estimates = []
     for y, ny in zip(ys, ysz):
+        y = y[:ny] # y is padded to length K. Remove that.
         s = y[-1] + 1
-        l = np.log(1/ps[s-1]-1) # Largest included logit
         k = len(y)
         m = sum(i for i in x if i < s)
         c = sum(i for i in y if i in x_set)
@@ -155,4 +158,5 @@ def estimate_weighted(ps, x, ys, ysz):
         else:
             v = bisect(inner, v0, v1, xtol=1e-2)
             estimates.append(v)
-
+    t2 = time.time() - start
+    return np.array(estimates), t1, t2
