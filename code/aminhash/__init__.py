@@ -122,7 +122,7 @@ class DiscretizedLogistic2:
 
 
 class DiscretizedLogistic:
-    def __init__(self, ps, cl=10):
+    def __init__(self, ps, cl=100):
         #assert ps[0] != 0 and ps[-1] != 1 # We don't need those
         #cl = min(len(ps), int(len(ps)**.33)+10)
         cl = min(len(np.unique(ps)), cl)
@@ -144,7 +144,6 @@ class DiscretizedLogistic:
         self.buckets = [[] for _ in range(cl)]
         for i, l in enumerate(self.labels):
             self.buckets[l].append(i)
-<<<<<<< HEAD
         self.cws = [(self.centers[l], len(b)) for l, b in enumerate(self.buckets)]
         self.cumsum = [0] # cumsum[s] = sum_{i<s} len(buckets[i])
         for bucket in self.buckets:
@@ -156,7 +155,7 @@ class DiscretizedLogistic:
         # Note, a suffix in ps means a prefix in logistics
         pre = len(self.labels) -  s # Size of prefix to use
         if pre == 0:
-            return lambda v: (lambda t: -v)
+            return (lambda v: (lambda t: -v)), (lambda t: 0)
         label = self.labels[pre-1] # Label of last included
         c0 = self.centers[label]
         w0 = pre - self.cumsum[label]
@@ -166,24 +165,11 @@ class DiscretizedLogistic:
                 return -v + w0/(1 + np.exp(c0 - t)) \
                           + sum(w/(1 + np.exp(c - t)) for c, w in self.cws[:label])
             return inner_t
-        return inner_v
-
-=======
-        self.cws = [(self.km.centers_[l], len(b)) for l, b in enumerate(self.buckets)]
-
-    def instance(self, s, v):
-        ''' f(ps[s:], t) - v '''
-        self.km.labels_[s] # Cluster of first index in suffix
-        label = self.km.labels_[s]
-        bucket_c = self.km.centers_[label]
-        bucket_w = sum(i >= s for i in self.buckets[label])
-        cws = [(bucket_c, bucket_w)] + self.cws[s+1:]
-        def inner(t):
-            return sum(w/(1+exp(c-t)) for c, w in cws)
+        # Prime doesn't care about v
         def prime(t):
-            return .5 * sum(w/(1+np.cosh(c-t)) for c, w in cws)
-        return inner, prime
->>>>>>> Better outputs
+            return .5 * (w0/(1 + np.cosh(c0 - t))
+                         + sum(w/(1+np.cosh(c - t)) for c, w in self.cws[:label]))
+        return inner_v, prime
 
 from sklearn.cluster import KMeans
 from collections import Counter
@@ -219,37 +205,68 @@ def estimate_weighted(ps, x, ys, ysz):
             estimates.append(v0/(nx+ny-v0))
             continue
 
-        f1, fp1 = fx.instance(m, v-c)
-        f2, fp2 = fu.instance(s-m, ny-k-v+c)
-        f3, fp3 = fx.instance(0, v)
-        f4, fp4 = fu.instance(0, ny-v)
+        f1, fp1 = fx.instance(m)
+        f2, fp2 = fu.instance(s-m)
+        f3, fp3 = fx.instance(0)
+        f4, fp4 = fu.instance(0)
         def inner(v, comp_prime=False):
-            t1 = bisect(f1, -30, 30)
-            t2 = bisect(f2, -30, 30)
-            t3 = bisect(f3, -30, 30)
-            t4 = bisect(f4, -30, 30)
-            val = t1+t4-t2-t3
+            def test(f, name):
+                th = 100
+                res1, res2 = f(-th), f(th)
+                if np.sign(res1) == np.sign(res2):
+                    print(res1, res2, name)
+                    print(f(-2*th), f(2*th))
+                    print((u,nx,ny,v),(s,m,k,c), name)
+                    if abs(res1) < abs(res2):
+                        return -th
+                    else: return th
+                return bisect(f, -th, th, xtol=1e-4)
+            t1 = test(f1(v-c), 1)
+            t2 = test(f2(ny-k-v+c), 2)
+            t3 = test(f3(v), 3)
+            t4 = test(f4(ny-v), 4)
+            val = - t1 + t2 + t3 - t4
             if comp_prime:
-                prime = -fp1(t1) - fp2(t2) + fp3(t3) + fp4(t4)
+                fp1t1, fp2t2 = fp1(t1), fp2(t2)
+                fp3t3, fp4t4 = fp3(t3), fp4(t4)
+                #print(fp1t1, fp2t2, fp3t3, fp4t4)
+                if fp1t1 == fp3t3 == 0:
+                    prime = -1/fp2t2 + 1/fp4t4
+                elif fp2t2 == fp4t4 == 0:
+                    prime = -1/fp1t1 + 1/fp3t3
+                elif any(fpt == 0 for fpt in [fp1t1, fp2t2, fp3t3, fp4t4]):
+                    return val, None
+                else:
+                    #print((u,nx,ny,v), (s,m,k,c), fp1t1, fp2t2, fp3t3, fp4t4)
+                    prime = -1/fp1t1 - 1/fp2t2 + 1/fp3t3 + 1/fp4t4
+                # This value is usually (always?) negative
+                #assert prime < 0
+                #print(prime)
                 return val, prime
             return val
         if False:
             v0, v1 = v0+1e-2, v1-1e-2
             t0, t1 = inner(v0), inner(v1)
             if t0 > 0:
-                estimates.append(v0)
+                estimates.append(v0/(nx+ny-v0))
             elif t1 < 0:
-                estimates.append(v1)
+                estimates.append(v1/(nx+ny-v1))
             else:
                 v = bisect(inner, v0, v1, xtol=1e-2)
-                estimates.append(v)
+                estimates.append(v/(nx+ny-v))
         else:
             v = c*(nx + ny)/(m + k)
+            for _ in range(5):
+                v = np.clip(v, v0+1e-1, v1-1e-1)
+                val, prime = inner(v, comp_prime=True)
+                if prime is not None:
+                    #val2, prime2 = inner(v+1e-1, comp_prime=True)
+                    #if abs((val2-val)/1e-1 - prime) > .1:
+                    #    print(f'{(val2-val)/1e-1=}, {prime=}, {prime2=}')
+                    #print(v, val, prime, val/prime, val2, prime2, (val2-val)/1e-1)
+                    v -= val/prime
             v = np.clip(v, v0, v1)
-            val, prime = inner(v)
-            v -= val/prime
-            v = np.clip(v, v0, v1)
-            estimates.append(v)
+            estimates.append(v/(nx+ny-v))
 
-    t2 = time.time() - start
-    return np.array(estimates), t1, t2
+    time2 = time.time() - start
+    return np.array(estimates), time1, time2

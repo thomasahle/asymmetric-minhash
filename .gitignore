@@ -291,3 +291,4 @@ data_weighted/
 *.so
 venv/
 notes/
+*.npy

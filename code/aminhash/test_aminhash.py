@@ -27,7 +27,8 @@ def test_dlog():
     f = DiscretizedLogistic(ps, cl=U)
     for suffix in range(U+1):
         for t in np.linspace(-10, 10):
-            est = f.instance(suffix)(0)(t)
+            func, prime = f.instance(suffix)
+            est = func(0)(t)
             real = sum(1/(1+(1-p)/p*np.exp(-t)) for p in ps[suffix:])
             # Since n_clusters = U the estimate should be exact
             assert np.isclose(est, real)
@@ -51,4 +52,4 @@ def test_weighted():
         guess_v = guess_j/(1+guess_j) * (nx + ny)
         real_v = len(set(X) & set(Y))
         mse += (real_v-guess_v)**2
-    assert mse/reps < 2
+    assert mse/reps < 2.5
