@@ -85,7 +85,8 @@ estimates = np.zeros(N, dtype=np.float32)  # Space for storing results
 t1, t2 = 0, 0
 total = 0
 for i, (q, threshold) in enumerate(zip(qs, answers)):
-    print(f'{i}/{len(qs)} r~{total / i if i > 0 else 0}', end='\r', flush=True)
+    #print(f'{i}/{len(qs)} r~{total / i if i > 0 else 0}', end='\r', flush=True)
+    print(f'{i}/{len(qs)} r~{total / i if i > 0 else 0}')
     if i % 400 == 0:
         print()
     if args.bottomk:
