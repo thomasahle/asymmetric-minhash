@@ -4,7 +4,7 @@ import argparse
 import random
 import collections
 
-from aminhash import datasets, estimate, estimate_bottomk, Hash, jac, tasks
+from aminhash import datasets, estimate, estimate_bottomk, estimate_weighted, Hash, jac, tasks
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--data', type=str, default='netflix', choices=datasets.files.keys())
@@ -13,6 +13,7 @@ parser.add_argument('-M', type=int, default=100, help='Number of queries')
 parser.add_argument('-K', type=int, default=30, help='Number of minhashes')
 parser.add_argument('-R', type=int, default=10, help='Recall@R')
 parser.add_argument('--bottomk', action='store_true', help='Use bottom-k instead of k-minhash')
+parser.add_argument('--weighted', action='store_true', help='Use bottom-k with probability estimates')
 parser.add_argument('--method', type=str, default='fast', help='Whether to use simpler formula')
 parser.add_argument('--newton', type=int, default=0, help='Number of Newton steps in some methods')
 parser.add_argument('--type', type=int, default=10, help='Extra parameter for comb7')
@@ -55,9 +56,10 @@ if args.bottomk:
         hs[0].perm[i] = j
 elif args.weighted:
     cnt = collections.Counter(tok for x in data for tok in x)
+    hs = [Hash(dom) for _ in range(1)]
     for j, (i, _) in enumerate(reversed(cnt.most_common())):
         hs[0].perm[i] = j
-    ps = np.array([cnt[tok] for tok in range(dom)]) / data.shape[0]
+    ps = np.array([cnt[tok] for tok in range(dom)]) / len(data)
     ps.sort()
 else:
     hs = [Hash(dom) for _ in range(K)]
@@ -92,13 +94,14 @@ for i, (q, threshold) in enumerate(zip(qs, answers)):
     if args.bottomk:
         estimates, t1, t2 = estimate_bottomk(args.method, q, db, sizes, dom, hs[0], estimates)
     elif args.weighted:
-        estimates, t1, t2 = estimate_weighted(ps, q, db, sizes)
+        hq = sorted(hs[0].perm[qi] for qi in q)
+        estimates, t1, t2 = estimate_weighted(ps, hq, db, sizes)
     else:
         estimates, t1, t2 = estimate(args.method, q, db, sizes, dom, hs, estimates)
     guesses = np.argpartition(-estimates, R)[:R]
     realj = max(jac(set(q), data[g]) for g in guesses) # brute force the guesses
     total += int(realj >= threshold or np.isclose(realj, threshold))
-    #print(f'est: {estimates[guess]}, {realj=}, {threshold=}')
+    print(f'est: {realj=}, {threshold=}')
 print(f'recall@{R}: {total / len(qs)}')
 print(f'Time preparing: {t1=}, Time searching: {t2=}')
 

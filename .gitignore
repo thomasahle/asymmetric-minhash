@@ -284,6 +284,7 @@ capitalization
 *.pdf
 data/
 data2/
+data_weighted/
 *.html
 *.cpp
 *.png
