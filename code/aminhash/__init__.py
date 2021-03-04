@@ -114,7 +114,7 @@ from sklearn.cluster import KMeans
 from collections import Counter
 from scipy.optimize import bisect
 def estimate_weighted(ps, x, ys, ysz):
-    assert ps == sorted(ps)
+    assert list(ps) == sorted(ps)
     u = len(ps)
     nx = len(x)
 

@@ -63,17 +63,14 @@ else:
     hs = [Hash(dom) for _ in range(K)]
 
 print('Hashing')
-hash_file = f'hashes_{args.data}_{args.bottomk=}_{N=}_{K=}.npy'
+hash_file = f'hashes_{args.data}_botk={args.bottomk or args.weighted}_{N=}_{K=}.npy'
 def inner_hashing(hs, y):
-    if args.bottomk:
+    if args.bottomk or args.weighted:
         botk = sorted(hs[0].perm[yi] for yi in y)[:K]
         # We pad with values outside of the universe.
         botk += [len(hs[0].perm)]*(K-len(botk))
         assert len(botk) == K
         return [len(y)] + botk
-    elif args.weighted:
-        botk = sorted(hs[0].perm[yi] for yi in y)[:K]
-        return [len(y)] + botk + [0]*(K-len(botk))
     return [len(y)] + [h(y) for h in hs]
 size_db = tasks.run(inner_hashing, data, args=(hs,), cache_file=hash_file,
                     verbose=True, chunksize=10000, report_interval=1000, perc=True)
@@ -82,7 +79,7 @@ sizes = np.ascontiguousarray(size_db[:, 0]).astype(np.int32)
 
 print('Sample hashes:')
 print(db)
-print(f'Computing recall@{R} with method {args.method}, {args.type}')
+print(f'Computing recall@{R} with method {args.bottomk=} {args.weighted=} {args.method}, {args.type}')
 
 estimates = np.zeros(N, dtype=np.float32)  # Space for storing results
 t1, t2 = 0, 0
