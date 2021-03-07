@@ -5,6 +5,10 @@ import math
 import bisect
 import statistics
 import functools
+from collections import Counter, defaultdict
+import matplotlib.pyplot as plt
+
+from aminhash import datasets
 
 
 parser = argparse.ArgumentParser()
@@ -25,7 +29,7 @@ parser_a.add_argument('--dist', type=str, default='uniform')
 
 
 def p1(pps, n):
-    @functools.lru_cache(10**6)
+    @functools.lru_cache(10**10)
     def p1_inner(u, n):
         if not 0 <= n <= u: return 0
         if u == 0: return 1
@@ -57,7 +61,7 @@ def make_table(ps):
 
 
 def sampler(ps):
-    @functools.lru_cache(10**8)
+    @functools.lru_cache(10**10)
     def p(u, nx, ny, v):
         ''' Probably that independent samples by p end up with (nx, nu, v) profile'''
         if not (0 <= v <= min(nx,ny)
@@ -196,7 +200,6 @@ def main(args):
             #series[i].append(K*statistics.variance(es, j))
             series[i].append(K*statistics.variance(es, v))
 
-    import matplotlib.pyplot as plt
     for ss, label in zip(series, labels):
         print(ss)
         plt.plot(js, ss, label=label)
@@ -205,15 +208,11 @@ def main(args):
     plt.ylabel('Variance')
     #plt.ylabel('Mean Squared Error')
 
-    if args.show;
+    if args.show:
         plt.show()
     fn = '_'.join(f'{k}={v}' for k, v in vars(args).items() if type(v) in [int,str])+'.png'
     print('Writing to', fn)
     plt.savefig(fn, dpi=600)
-
-from aminhash import datasets
-from collections import Counter, defaultdict
-import random
 
 def main_data(args):
     print('Loading data')
@@ -251,7 +250,6 @@ def main_data(args):
         estimates[0].append((j, estimators[0].estimate(ps, nx, ny, Xr, Yr[:K])))
         estimates[2].append((j, estimators[2].estimate(ps, nx, ny, Xr, Yr[:K])))
 
-    import matplotlib.pyplot as plt
     for data, label in zip(estimates, labels):
         js, vals = map(np.array, zip(*data))
         n_buckets = int(args.R**.5)
