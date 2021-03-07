@@ -2,8 +2,6 @@ import numpy as np
 import random
 import time
 
-from . import minhash
-
 random.seed(74)
 
 
@@ -34,6 +32,8 @@ def make_tables(x, hs, dom):
 
 
 def estimate(method, x, ys, ysz, dom, hs, estimates=None):
+    from . import minhash
+
     N = len(ys)
 
     if method == 'sym':
@@ -64,6 +64,7 @@ def estimate(method, x, ys, ysz, dom, hs, estimates=None):
 
 
 def estimate_bottomk(method, x, ys, ysz, dom, h, estimates=None):
+    from . import minhash
     N = len(ys)
 
     if estimates is None:
