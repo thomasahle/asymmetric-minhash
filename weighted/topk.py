@@ -88,7 +88,7 @@ def main():
                     series[f'{length=}, {aggregate=}'].append(est)
     for label, ests in series.items():
         est_ar = np.array(ests).reshape(-1, reps)
-        mse = np.mean((est_ar - vs)**2, axis=1) / reps
+        mse = np.mean((est_ar - vs[:,None])**2, axis=1) / reps
         plt.plot(vs, mse, label=label)
     plt.legend()
     print('Savinig to', fn:='out.png')
