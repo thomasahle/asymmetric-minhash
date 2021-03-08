@@ -1,4 +1,5 @@
 import heapq
+import argparse
 import random
 import time
 import matplotlib.pyplot as plt
@@ -60,27 +61,48 @@ def estimate(X, Ys, Yv, ny, l, seed, aggregate='max'):
     #return v/(nx + ny - v)
 
 def sample(u, nx, ny, v):
-    X = random.sample(range(10**8), 10**4)
+    X = random.sample(range(u), nx)
     Y = set(random.sample(X, v))
+    X = set(X)
     while len(Y) != ny:
-        y = random.choice(range(10**8))
-        if y not in Y:
+        y = random.choice(range(u))
+        if y not in Y and y not in X:
             Y.add(y)
+    assert len(X) == nx
+    assert len(Y) == ny
+    assert len(X&Y) == v
     return X, Y
 
+
+
+parser = argparse.ArgumentParser()
+#parser.add_argument('dataset', type=str, choices=['netflix','flickr','dblp'])
+parser.add_argument('-U', type=int, default=1000)
+parser.add_argument('-X', type=int, default=100)
+parser.add_argument('-Y', type=int, default=100)
+parser.add_argument('-K', type=int, default=10)
+parser.add_argument('-R', type=int, default=100)
+parser.add_argument('-Nv', type=int, default=50)
+parser.add_argument('-L', type=int, default=3)
+args = parser.parse_args()
+
+
+
 def main():
-    u, nx, ny = 10**5, 10**3, 10**3
-    K = 10
-    reps = 10
+    u, nx, ny = args.U, args.X, args.Y
+    K = args.K
+    reps = args.R
+    fn = '_'.join(f'{k}={v}' for k, v in vars(args).items() if type(v) in [int,str])+'.png'
+    print(fn)
 
     series = defaultdict(list)
-    vs = np.linspace(0, min(nx, ny), dtype=int, num=3)
+    vs = np.linspace(0, min(nx, ny), dtype=int, num=args.Nv)
     for v in vs:
         for i in range(reps):
             print(v, f'{i}/{reps}')
             X, Y = sample(u, nx, ny, v)
             seed = random.randrange(2**32)
-            for length in [1,2,3]:
+            for length in range(1, args.L+1):
                 # xor is fucking stupid because it's not monotone
                 for aggregate in ['max', 'sum', 'xor']:
                     Ys, Yv = zip(*topk(X, K, length, seed, aggregate=aggregate))
@@ -91,7 +113,6 @@ def main():
         mse = np.mean((est_ar - vs[:,None])**2, axis=1) / reps
         plt.plot(vs, mse, label=label)
     plt.legend()
-    print('Savinig to', fn:='out.png')
     plt.savefig(fn, dpi=600)
     plt.show()
 

@@ -7,6 +7,7 @@ import statistics
 import functools
 from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
+import re
 
 from aminhash import datasets
 
@@ -22,10 +23,10 @@ parser_a.add_argument('dataset', type=str, choices=['netflix','flickr','dblp'])
 parser_a.add_argument('-N', type=int, default=None, help='Limit to N ponits of dataset')
 
 parser_b = subparsers.add_parser('gen', help='Generated data')
+parser_b.add_argument('dist', type=str, default='uniform')
 parser_b.add_argument('-U', type=int, default=100, help='Universe siize')
 parser_b.add_argument('-X', type=int, default=30, help='Size of X')
 parser_b.add_argument('-Y', type=int, default=30, help='Size of Y')
-parser_a.add_argument('--dist', type=str, default='uniform')
 
 
 def p1(pps, n):
@@ -85,6 +86,7 @@ def sampler(ps):
         p01 = pi*(1-pi) * p(u-1, nx, ny-1, v)
         p00 = (1-pi)**2 * p(u-1, nx, ny, v)
         x, y = random.choices(((1,1),(1,0),(0,1),(0,0)), [p11,p10,p01,p00])[0]
+        #print('chose', (x,y), 'from', [p11,p10,p01,p00])
         xtail, ytail = sample(u-1, nx-x, ny-y, v-x*y)
         return [x]+xtail, [y]+ytail
 
@@ -172,8 +174,9 @@ def main(args):
         elif args.dist == 'squared':
             ps = sorted(random.random()**2 for _ in range(u))
         elif m := re.match('zipf-(\d+\.?\d*)', args.dist):
-            a = float(m.groups(1))
+            a = float(m.group(1))
             ps = sorted(1/k**a for k in range(1, u+1))
+            ps = np.clip(ps, 1e-5, 1-1e-5)
         sample = sampler(ps)
         for v in range(min(nx,ny)+1):
             print(f'{v=}', end='\r')
