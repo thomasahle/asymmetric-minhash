@@ -10,12 +10,12 @@ def h(state, j):
     random.seed(state ^ j)
     return random.randrange(2**32)
 
-def topk(X, k, length, seed, aggregate='max'):
-    q = [(0, seed, 0)]
+def topk(X, k, length, seeds, aggregate='max'):
+    q = [(0, seed, 0, ()) for seed in seeds]
     while q and k > 0:
-        v, state, l = heapq.heappop(q) # Smallest
+        v, state, l, string = heapq.heappop(q) # Smallest
         if l == length:
-            yield state, v
+            yield state, v, string
             k -= 1
             continue
         # TODO: Better generate these in increasing order
@@ -30,7 +30,7 @@ def topk(X, k, length, seed, aggregate='max'):
                 v1 = v + state1
             elif aggregate == 'xor':
                 v1 = v ^ state1
-            heapq.heappush(q, (v1, state1, l+1))
+            heapq.heappush(q, (v1, state1, l+1, string+(j,)))
 
 def count_treshold(X, l, Ys, th, state, v, aggregate='max'):
     ''' Returns number of Xs <= th and number of those that are in Ys '''
@@ -50,10 +50,13 @@ def count_treshold(X, l, Ys, th, state, v, aggregate='max'):
     return res_c, res_m
 
 
-def estimate(X, Ys, Yv, ny, l, seed, aggregate='max'):
+def estimate(X, Ys, Yv, ny, l, seeds, aggregate='max'):
     k = len(Ys)
     s = Yv[-1]
-    c, m = count_treshold(X, l, set(Ys), s, seed, 0, aggregate)
+    c, m = 0, 0
+    for seed in seeds:
+        ci, mi = count_treshold(X, l, set(Ys), s, seed, 0, aggregate)
+        c, m = c+ci, m+mi
     nx = len(X)
     vl = c * (nx**l + ny**l) / (k + m)
     v = vl ** (1/l)
@@ -83,8 +86,11 @@ parser.add_argument('-Y', type=int, default=100)
 parser.add_argument('-K', type=int, default=10)
 parser.add_argument('-R', type=int, default=100)
 parser.add_argument('-Nv', type=int, default=50)
+parser.add_argument('-Mv', type=int, default=None)
 parser.add_argument('-L', type=int, default=3)
+parser.add_argument('-W', type=int, default=10, help='Number of independent restarts')
 args = parser.parse_args()
+
 
 
 
@@ -95,22 +101,41 @@ def main():
     fn = '_'.join(f'{k}={v}' for k, v in vars(args).items() if type(v) in [int,str])+'.png'
     print(fn)
 
+    #_, Y = sample(u, nx, ny, 0)
+    #merged = []
+    #for _ in range(K):
+    #    seed = random.randrange(2**32)
+    #    print('Seed', seed)
+    #    for state, val, string in topk(Y, K, 3, seed, aggregate='max'):
+    #        print(state, val, string)
+    #        merged.append((val, state, string))
+    #merged.sort()
+    #print('Merged')
+    #for val, state, string in merged[:K]:
+    #    print(state, val, string)
+
+    #return
+
     series = defaultdict(list)
-    vs = np.linspace(0, min(nx, ny), dtype=int, num=args.Nv)
+    vs = np.linspace(0, args.Mv or min(nx, ny), dtype=int, num=args.Nv)
     for v in vs:
         for i in range(reps):
             print(v, f'{i}/{reps}')
             X, Y = sample(u, nx, ny, v)
-            seed = random.randrange(2**32)
             for length in range(1, args.L+1):
                 # xor is fucking stupid because it's not monotone
-                for aggregate in ['max', 'sum', 'xor']:
-                    Ys, Yv = zip(*topk(X, K, length, seed, aggregate=aggregate))
-                    est = estimate(X, Ys, Yv, ny, length, seed, aggregate)
-                    series[f'{length=}, {aggregate=}'].append(est)
+                #for aggregate in ['max', 'sum', 'xor']:
+                for w in [1, 8, 30]:
+                    for aggregate in ['max']:
+                        seeds = [random.randrange(2**32) for _ in range(w)]
+                        Ys, Yv, _strs = zip(*topk(Y, K, length, seeds, aggregate=aggregate))
+                        est = estimate(X, Ys, Yv, ny, length, seeds, aggregate)
+                        series[f'{length=}, {aggregate=}, {w=}'].append(est)
     for label, ests in series.items():
+        #print(label, ests)
         est_ar = np.array(ests).reshape(-1, reps)
-        mse = np.mean((est_ar - vs[:,None])**2, axis=1) / reps
+        mse = np.mean((est_ar - vs[:,None])**2, axis=1)
+        #print(mse)
         plt.plot(vs, mse, label=label)
     plt.legend()
     plt.savefig(fn, dpi=600)
