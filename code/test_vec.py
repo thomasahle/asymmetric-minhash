@@ -13,21 +13,8 @@ from aminhash import datasets
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-R', type=int, default=100, help='Number of repetitions')
-parser.add_argument('-K', type=int, default=10, help='Bottom-K')
-parser.add_argument('--show', action='store_true')
-subparsers = parser.add_subparsers(dest='command')
-subparsers.required = True
-
-parser_a = subparsers.add_parser('data', help='Usinig a dataset')
-parser_a.add_argument('dataset', type=str, choices=['netflix','flickr','dblp'])
-parser_a.add_argument('-N', type=int, default=None, help='Limit to N ponits of dataset')
-
-parser_b = subparsers.add_parser('gen', help='Generated data')
-parser_b.add_argument('dist', type=str, default='uniform')
-parser_b.add_argument('-U', type=int, default=100, help='Universe siize')
-parser_b.add_argument('-X', type=int, default=30, help='Size of X')
-parser_b.add_argument('-Y', type=int, default=30, help='Size of Y')
+parser.add_argument('dataset', type=str, choices=['netflix','flickr','dblp'])
+parser.add_argument('--vec', type=str)
 
 
 def p1(pps, n):

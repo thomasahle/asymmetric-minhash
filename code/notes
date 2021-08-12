@@ -1,0 +1,49 @@
+F1 opt, netflix30, no clipping
+0 282100 0.6460855102539063
+0 282100 Avg self-jaccard: 0.33370969918287857
+0 282100 Dif self-jaccard: tensor(0.4843, grad_fn=<DivBackward0>)
+0 282100 RMSD size: tensor(2.1064e-05, grad_fn=<PowBackward0>)
+0 282100 weight avg tensor(0.3348, grad_fn=<PowBackward0>)
+grad norm tensor(2.6921)
+
+
+dblp, k=100, clipping, f1 opt
+
+11 74700 Avg self-jaccard: 0.7610984429503556
+11 74700 Dif self-jaccard: tensor(0.8470, grad_fn=<DivBackward0>)
+11 74700 RMSD size: tensor(0.2723, grad_fn=<PowBackward0>)
+11 74700 weight avg tensor(0.2720, grad_fn=<PowBackward0>)
+grad norm tensor(2.6087)
+
+
+netflix, k=100, clipping, f1 opt
+
+grad norm tensor(2.8503)
+0 265100 Avg self-jaccard: 0.4342867765474685
+0 265100 Dif self-jaccard: tensor(0.6098, grad_fn=<DivBackward0>)
+0 265100 RMSD size: tensor(0.0243, grad_fn=<PowBackward0>)
+0 265100 weight avg tensor(0.1405, grad_fn=<PowBackward0>)
+
+
+flickr k=10, clipping, f1 opt
+
+grad norm tensor(1.9465)
+0 1011300 Avg self-jaccard: 0.18674408828844558
+0 1011300 Dif self-jaccard: tensor(0.2684, grad_fn=<DivBackward0>)
+0 1011300 RMSD size: tensor(9.9283e-05, grad_fn=<PowBackward0>)
+0 1011300 weight avg tensor(0.1856, grad_fn=<PowBackward0>)
+
+
+flickr k=30, clipping, f1 opt
+
+0 1011300 Avg self-jaccard: 0.33
+
+ 
+flickr k=10, no clipping, BS=32
+
+0 536192 Avg self-jaccard: 0.1819902761638807
+0 536192 Dif self-jaccard: tensor(0.3391, grad_fn=<DivBackward0>)
+0 536192 RMSD size: tensor(6.9635e-05, grad_fn=<PowBackward0>)
+0 536192 weight avg tensor(0.1544, grad_fn=<PowBackward0>)
+grad norm tensor(0.4953)
+
